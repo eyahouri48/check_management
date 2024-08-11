@@ -1,3 +1,5 @@
+// app.js
+
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -8,6 +10,8 @@ import pkg from 'pg';
 import bcrypt from 'bcryptjs';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
+import flash from 'connect-flash';
+import mainRoutes from './routes/mainRoutes.js'; // Import the function
 
 dotenv.config();
 const { Pool } = pkg;
@@ -38,6 +42,7 @@ app.use(session({
     saveUninitialized: false,
 }));
 
+app.use(flash());
 // Passport initialization
 app.use(passport.initialize());
 app.use(passport.session());
@@ -76,75 +81,8 @@ passport.deserializeUser(async (iduser, done) => {
     }
 });
 
-// Middleware to check if the user is authenticated
-function ensureAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.redirect('/login');
-}
-
-// Routes
-app.get('/', ensureAuthenticated, (req, res) => {
-    res.render('dashboard', { title: "management" });
-});
-
-app.get('/dashboard', ensureAuthenticated, (req, res) => {
-    res.render('dashboard', { title: "management" });
-});
-
-app.get('/checks', ensureAuthenticated, (req, res) => {
-    res.render('checks');
-});
-
-app.get('/404', (req, res) => {
-    res.render('404');
-});
-
-app.get('/charts', ensureAuthenticated, (req, res) => {
-    res.render('charts');
-});
-
-app.get('/tables', ensureAuthenticated, (req, res) => {
-    res.render('tables');
-});
-
-app.get('/login', (req, res) => {
-    res.render('login');
-});
-
-app.get('/banks', ensureAuthenticated, (req, res) => {
-    res.render('banks');
-});
-
-app.get('/accounts', ensureAuthenticated, (req, res) => {
-    res.render('accounts');
-});
-
-app.get('/emission', ensureAuthenticated, (req, res) => {
-    res.render('emission');
-}); 
-
-app.get('/logout', (req, res) => {
-    req.logout(err => {
-        if (err) {
-            return next(err);
-        }
-        res.redirect('/login');
-    });
-});
-
-app.post('/login',
-    passport.authenticate('local', {
-        successRedirect: '/dashboard',
-        failureRedirect: '/login',
-        failureFlash: false
-    })
-);
-
-app.use((req, res) => {
-    res.status(404).render('404');
-});
+// Use the routes, passing passport as an argument
+app.use('/', mainRoutes(passport)); // Pass passport to mainRoutes
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
@@ -152,5 +90,4 @@ app.listen(PORT, () => {
 });
 
 export default app;
-
 
