@@ -27,19 +27,23 @@ bankCode int,
 FOREIGN KEY(bankCode) REFERENCES Bank(code),
 supprime boolean default false );
 
+CREATE TABLE cheque (
+    num SERIAL PRIMARY KEY,
+    amount FLOAT NOT NULL,
+    beneficiary VARCHAR(50) NOT NULL,
+    creationDate DATE,
+    valueDate DATE,
+    entryDate DATE,
+    issueDate DATE,
+    type CHAR,
+    bankCode INT NOT NULL,
+    accountNum INT,
+    createdBy INT,         
+    updatedBy INT,        
+    FOREIGN KEY (accountNum) REFERENCES Account(num),
+    FOREIGN KEY (createdBy) REFERENCES users(idUser),
+    FOREIGN KEY (updatedBy) REFERENCES users(idUser),
+    supprime BOOLEAN DEFAULT FALSE
+);
 
-create table cheque (
-num serial primary key ,
-amount float NOT NULL,
-benefeciary varchar(50) NOT NULL,
-creationDate date ,
-valueDate date ,
-entryDate date ,
-issueDate date ,
-type char ,
-bankCode int NOT NULL ,
-accountNum int ,
-idAgent int ,
-idCaissier int ,
-FOREIGN KEY(accountNum) REFERENCES Account(num),
-supprime boolean default false );
+insert into users (idUser,username,password,fullName,function,idRole,supprime) values (1,'eya','eya','tfytfyf','agent',2,false);
