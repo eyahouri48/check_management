@@ -88,11 +88,25 @@
           <span>Dashboard</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/banks">
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="banksDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           <i class="fas fa-fw fa-university"></i>
           <span>Banks</span>
         </a>
+        <div class="dropdown-menu" aria-labelledby="banksDropdown">
+          <a class="dropdown-item" href="/view-banks">
+            <i class="fas fa-fw fa-eye"></i> View Banks
+          </a>
+          <a class="dropdown-item" href="/banks/add">
+            <i class="fas fa-fw fa-plus"></i> Add Bank
+          </a>
+          <a class="dropdown-item" href="/banks/edit">
+            <i class="fas fa-fw fa-pen"></i> Edit Bank
+          </a>
+          <a class="dropdown-item" href="/banks/search">
+            <i class="fas fa-fw fa-search"></i> Search Bank
+          </a>
+        </div>
       </li>
       <li class="nav-item">
         <a class="nav-link" href="/checks">
@@ -250,7 +264,7 @@
         <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
         <div class="modal-footer">
           <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-          <a class="btn btn-primary" href="/login">Logout</a>
+          <a class="btn btn-primary" href="/logout">Logout</a>
         </div>
       </div>
     </div>
@@ -278,4 +292,3 @@
 </body>
 
 </html>
-
