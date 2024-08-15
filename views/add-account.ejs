@@ -5,11 +5,9 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>Banks</title>
+  <title>Add Account</title>
   <!-- Custom fonts for this template-->
   <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
-  <!-- Page level plugin CSS-->
-  <link href="vendor/datatables/dataTables.bootstrap4.css" rel="stylesheet">
   <!-- Custom styles for this template-->
   <link href="css/sb-admin.css" rel="stylesheet">
 </head>
@@ -42,11 +40,16 @@
           <span>Dashboard</span>
         </a>
       </li>
-      <!-- Add your other sidebar items here -->
       <li class="nav-item">
         <a class="nav-link" href="/banks">
           <i class="fas fa-fw fa-university"></i>
           <span>Banks</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/accounts">
+          <i class="fas fa-fw fa-briefcase"></i>
+          <span>Accounts</span>
         </a>
       </li>
     </ul>
@@ -58,58 +61,31 @@
           <li class="breadcrumb-item">
             <a href="/">Dashboard</a>
           </li>
-          <li class="breadcrumb-item active">Banks</li>
+          <li class="breadcrumb-item">
+            <a href="/accounts">Accounts</a>
+          </li>
+          <li class="breadcrumb-item active">Add Account</li>
         </ol>
 
         <!-- Page Content -->
-        <div class="row mb-4">
-          <div class="col-xl-3 col-sm-6 mb-3">
-            <a class="card text-white bg-success o-hidden h-100" href="/add/bank">
-              <div class="card-body">
-                <div class="card-body-icon">
-                  <i class="fas fa-plus"></i>
-                </div>
-                <div class="mr-5">Add a New Bank</div>
+        <div class="row">
+          <div class="col-lg-8">
+            <h1 class="page-header">Add a New Account</h1>
+            <form action="/add-account" method="POST">
+              <div class="form-group">
+                <label for="bankCode">Bank Code</label>
+                <select class="form-control" id="bankCode" name="bankCode" required>
+                  <% banks.forEach(function(bank) { %>
+                    <option value="<%= bank.code %>"><%= bank.code %> - <%= bank.name %></option>
+                  <% }); %>
+                </select>
               </div>
-              <div class="card-footer text-white clearfix small z-1">
-                <span class="float-left">Click to add</span>
-                <span class="float-right">
-                  <i class="fas fa-angle-right"></i>
-                </span>
+              <div class="form-group">
+                <button type="submit" class="btn btn-primary">Add Account</button>
               </div>
-            </a>
+            </form>
           </div>
-          <% banks.forEach(bank => { %>
-          <div class="col-xl-3 col-sm-6 mb-3">
-            <div class="card text-white bg-primary o-hidden h-100">
-              <div class="card-body">
-                <div class="card-body-icon">
-                  <i class="fas fa-fw fa-university"></i>
-                </div>
-                <div class="mr-5"><%= bank.name %></div>
-              </div>
-              <a class="card-footer text-white clearfix small z-1" href="/banks/edit/<%= bank.code %>">
-                <span class="float-left">Edit</span>
-                <span class="float-right">
-                  <i class="fas fa-angle-right"></i>
-                </span>
-              </a>
-              <!-- Replace the Delete link with a form -->
-              <a class="card-footer text-white clearfix small z-1" href="#" onclick="event.preventDefault(); document.getElementById('delete-bank-form-<%= bank.code %>').submit();">
-                <span class="float-left">Delete</span>
-                <span class="float-right">
-                  <i class="fas fa-angle-right"></i>
-                </span>
-              </a>
-              <!-- Hidden form for deleting the bank -->
-              <form id="delete-bank-form-<%= bank.code %>" action="/banks/delete/<%= bank.code %>" method="POST" style="display: none;">
-                <input type="hidden" name="_method" value="DELETE">
-              </form>
-            </div>
-          </div>
-          <% }) %>
         </div>
-
       </div>
       <!-- /.container-fluid -->
 
@@ -136,4 +112,3 @@
 </body>
 
 </html>
-

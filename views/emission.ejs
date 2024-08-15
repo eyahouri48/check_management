@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checks Management</title>
+  <!-- Include Bootstrap and FontAwesome for styling -->
+  <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="css/sb-admin.css" rel="stylesheet">
+</head>
+
+<body id="page-top">
+  <nav class="navbar navbar-expand navbar-dark bg-dark static-top">
+    <a class="navbar-brand mr-1" href="/">Check Management</a>
+    <button class="btn btn-link btn-sm text-white order-1 order-sm-0" id="sidebarToggle" href="#">
+      <i class="fas fa-bars"></i>
+    </button>
+    <ul class="navbar-nav ml-auto ml-md-0">
+      <li class="nav-item dropdown no-arrow">
+        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
+          aria-haspopup="true" aria-expanded="false">
+          <i class="fas fa-user-circle fa-fw"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+          <a class="dropdown-item" href="#">Logout</a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+
+  <div id="wrapper">
+    <!-- Sidebar -->
+    <ul class="sidebar navbar-nav">
+      <li class="nav-item active">
+        <a class="nav-link" href="/">
+          <i class="fas fa-fw fa-tachometer-alt"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/banks">
+          <i class="fas fa-fw fa-university"></i>
+          <span>Banks</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/accounts">
+          <i class="fas fa-fw fa-briefcase"></i>
+          <span>Accounts</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/emission">
+          <i class="fas fa-fw fa-money-check"></i>
+          <span>Checks</span>
+        </a>
+      </li>
+    </ul>
+
+    <div id="content-wrapper">
+      <div class="container-fluid">
+        <!-- Breadcrumbs-->
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">
+            <a href="/">Dashboard</a>
+          </li>
+          <li class="breadcrumb-item active">Checks</li>
+        </ol>
+        <!-- Search Filter Form -->
+<div class="card mb-4">
+  <div class="card-header">
+    <i class="fas fa-search"></i> Filter Checks
+  </div>
+  <div class="card-body">
+    <form action="/search-results" method="GET">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="creationDate">Creation Date</label>
+            <input type="date" id="creationDate" name="creationDate" class="form-control">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="valueDate">Value Date</label>
+            <input type="date" id="valueDate" name="valueDate" class="form-control">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="entryDate">Entry Date</label>
+            <input type="date" id="entryDate" name="entryDate" class="form-control">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="issueDate">Issue Date</label>
+            <input type="date" id="issueDate" name="issueDate" class="form-control">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="type">Type</label>
+            <select id="type" name="type" class="form-control">
+              <option value="">-- Select Type --</option>
+              <option value="P">Personnel</option>
+              <option value="S">Stagiaire</option>
+              <option value="F">Fournisseur</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary">Search</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+        <!-- Page Content -->
+        <div class="row mb-4">
+          <div class="col-xl-3 col-sm-6 mb-3">
+            <a class="card text-white bg-success o-hidden h-100" href="/add-check">
+              <div class="card-body">
+                <div class="card-body-icon">
+                  <i class="fas fa-plus"></i>
+                </div>
+                <div class="mr-5">Add a New Check</div>
+              </div>
+              <div class="card-footer text-white clearfix small z-1">
+                <span class="float-left">Click to add</span>
+                <span class="float-right">
+                  <i class="fas fa-angle-right"></i>
+                </span>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <div class="row">
+          <% checks.forEach(check => { %>
+          <div class="col-xl-3 col-sm-6 mb-3">
+            <div class="card text-white bg-primary o-hidden h-100">
+              <div class="card-body">
+                <div class="card-body-icon">
+                  <i class="fas fa-fw fa-money-check"></i>
+                </div>
+                <div class="mr-5">Check Number: <%= check.num %></div>
+                <div class="mr-5">Amount: <%= check.amount || 'None' %></div>
+                <div class="mr-5">Beneficiary: <%= check.beneficiary || 'None' %></div>
+                <div class="mr-5">Creation Date: <%= check.creationdate ? new Date(check.creationdate).toLocaleDateString() : 'None' %></div>
+                <div class="mr-5">Value Date: <%= check.valuedate ? new Date(check.valuedate).toLocaleDateString() : 'None' %></div>
+                <div class="mr-5">Entry Date: <%= check.entrydate ? new Date(check.entrydate).toLocaleDateString() : 'None' %></div>
+                <div class="mr-5">Issue Date: <%= check.issuedate ? new Date(check.issuedate).toLocaleDateString() : 'None' %></div>
+                <div class="mr-5">Type: <%= check.type || 'None' %></div>
+                <div class="mr-5">Bank Code: <%= check.bankcode || 'None' %></div>
+                <div class="mr-5">Account Number: <%= check.accountnum || 'None' %></div>
+                <div class="mr-5">Created By: <%= check.createdby || 'None' %></div>
+                <div class="mr-5">Updated By: <%= check.updatedby || 'None' %></div>
+              </div>
+              <a class="card-footer text-white clearfix small z-1" href="/checks/edit/<%= check.num %>">
+                <span class="float-left">Edit</span>
+                <span class="float-right">
+                  <i class="fas fa-angle-right"></i>
+                </span>
+              </a>
+              <a class="card-footer text-white clearfix small z-1" href="#"
+                onclick="event.preventDefault(); document.getElementById('set-to-zero-form-<%= check.num %>').submit();">
+                <span class="float-left">Set to 0</span>
+                <span class="float-right">
+                  <i class="fas fa-angle-right"></i>
+                </span>
+              </a>
+              <form id="set-to-zero-form-<%= check.num %>" action="/checks/set-to-zero/<%= check.num %>" method="POST"
+                style="display: none;">
+                <input type="hidden" name="_method" value="POST">
+              </form>
+              <a class="card-footer text-white clearfix small z-1" href="#"
+                onclick="event.preventDefault(); document.getElementById('delete-check-form-<%= check.num %>').submit();">
+                <span class="float-left">Delete</span>
+                <span class="float-right">
+                  <i class="fas fa-angle-right"></i>
+                </span>
+              </a>
+              <form id="delete-check-form-<%= check.num %>" action="/checks/delete/<%= check.num %>" method="POST"
+                style="display: none;">
+                <input type="hidden" name="_method" value="DELETE">
+              </form>
+
+             
+
+            </div>
+          </div>
+          <% }) %>
+        </div>
+
+      </div>
+      <!-- /.container-fluid -->
+
+      <!-- Sticky Footer -->
+      <footer class="sticky-footer">
+        <div class="container my-auto">
+          <div class="copyright text-center my-auto">
+            <span>Copyright © Your Website 2024</span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    <!-- /.content-wrapper -->
+  </div>
+  <!-- /#wrapper -->
+
+  <!-- Bootstrap core JavaScript-->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+  <script src="js/sb-admin.min.js"></script>
+</body>
+
+</html>
+
+

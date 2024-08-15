@@ -28,14 +28,14 @@ FOREIGN KEY(bankCode) REFERENCES Bank(code),
 supprime boolean default false );
 
 CREATE TABLE cheque (
-    num SERIAL PRIMARY KEY,
-    amount FLOAT NOT NULL,
-    beneficiary VARCHAR(50) NOT NULL,
-    creationDate DATE,
-    valueDate DATE,
-    entryDate DATE,
-    issueDate DATE,
-    type CHAR,
+    num SERIAL PRIMARY KEY,-- filtre--
+    amount FLOAT NOT NULL,--filtre--
+    beneficiary VARCHAR(50) NOT NULL,--filtre--
+    creationDate DATE DEFAULT NOW(),--filtre--
+    valueDate DATE,--filtre--
+    entryDate DATE,--filtre--
+    issueDate DATE,--filtre--
+    type CHAR,--filtre--
     bankCode INT NOT NULL,
     accountNum INT,
     createdBy INT,         
