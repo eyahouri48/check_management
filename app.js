@@ -84,6 +84,7 @@ passport.deserializeUser(async (iduser, done) => {
 // Use the routes, passing passport as an argument
 app.use('/', mainRoutes(passport)); // Pass passport to mainRoutes
 
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

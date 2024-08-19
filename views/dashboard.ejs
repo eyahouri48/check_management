@@ -8,7 +8,7 @@
   <meta name="description" content="">
   <meta name="author" content="">
 
-  <title><%= title %></title>
+  <title>Management</title>
 
   <!-- Custom fonts for this template-->
   <link href="/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -32,12 +32,6 @@
 
     <form class="d-none d-md-inline-block form-inline ml-auto mr-0 mr-md-3 my-2 my-md-0">
       <div class="input-group">
-        <input type="text" class="form-control" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2">
-        <div class="input-group-append">
-          <button class="btn btn-primary" type="button">
-            <i class="fas fa-search"></i>
-          </button>
-        </div>
       </div>
     </form>
 
@@ -88,6 +82,7 @@
           <span>Dashboard</span>
         </a>
       </li>
+      <% if (userRole === 'admin') {%>
       <li class="nav-item">
         <a class="nav-link" href="/banks">
           <i class="fas fa-fw fa-university"></i>
@@ -100,12 +95,8 @@
           <span>Accounts</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/checks">
-          <i class="fas fa-fw fa-money-check-alt"></i>
-          <span>Checks</span>
-        </a>
-      </li>
+      <% } %>
+
       
       <!-- Added Emission item -->
       <li class="nav-item">
@@ -275,7 +266,16 @@
   <!-- Demo scripts for this page-->
   <script src="/js/demo/datatables-demo.js"></script>
   <script src="/js/demo/chart-area-demo.js"></script>
-
+  <script type="text/javascript">
+    if (window.history && window.history.pushState) {
+        window.history.pushState('', null, '');
+        window.onpopstate = function() {
+            window.history.pushState('', null, '');
+        };
+    }
+</script>
 </body>
+
+
 
 </html>

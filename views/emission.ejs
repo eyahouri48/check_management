@@ -38,22 +38,24 @@
           <span>Dashboard</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/banks">
-          <i class="fas fa-fw fa-university"></i>
-          <span>Banks</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/accounts">
-          <i class="fas fa-fw fa-briefcase"></i>
-          <span>Accounts</span>
-        </a>
-      </li>
+      <% if (userRole === 'admin') { %>
+        <li class="nav-item">
+          <a class="nav-link" href="/banks">
+            <i class="fas fa-fw fa-university"></i>
+            <span>Banks</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/accounts">
+            <i class="fas fa-fw fa-briefcase"></i>
+            <span>Accounts</span>
+          </a>
+        </li>
+      <% } %>
       <li class="nav-item">
         <a class="nav-link" href="/emission">
           <i class="fas fa-fw fa-money-check"></i>
-          <span>Checks</span>
+          <span>Emission</span>
         </a>
       </li>
     </ul>
@@ -68,56 +70,57 @@
           <li class="breadcrumb-item active">Checks</li>
         </ol>
         <!-- Search Filter Form -->
-<div class="card mb-4">
-  <div class="card-header">
-    <i class="fas fa-search"></i> Filter Checks
-  </div>
-  <div class="card-body">
-    <form action="/search-results" method="GET">
-      <div class="row">
-        <div class="col-md-4">
-          <div class="form-group">
-            <label for="creationDate">Creation Date</label>
-            <input type="date" id="creationDate" name="creationDate" class="form-control">
+        <div class="card mb-4">
+          <div class="card-header">
+            <i class="fas fa-search"></i> Filter Checks
+          </div>
+          <div class="card-body">
+            <form action="/search-results" method="GET">
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="creationDate">Creation Date</label>
+                    <input type="date" id="creationDate" name="creationDate" class="form-control">
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="valueDate">Value Date</label>
+                    <input type="date" id="valueDate" name="valueDate" class="form-control">
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="entryDate">Entry Date</label>
+                    <input type="date" id="entryDate" name="entryDate" class="form-control">
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="issueDate">Issue Date</label>
+                    <input type="date" id="issueDate" name="issueDate" class="form-control">
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="type">Type</label>
+                    <select id="type" name="type" class="form-control">
+                      <option value="">-- Select Type --</option>
+                      <option value="P">Personnel</option>
+                      <option value="S">Stagiaire</option>
+                      <option value="F">Fournisseur</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                  <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
-        <div class="col-md-4">
-          <div class="form-group">
-            <label for="valueDate">Value Date</label>
-            <input type="date" id="valueDate" name="valueDate" class="form-control">
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="form-group">
-            <label for="entryDate">Entry Date</label>
-            <input type="date" id="entryDate" name="entryDate" class="form-control">
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="form-group">
-            <label for="issueDate">Issue Date</label>
-            <input type="date" id="issueDate" name="issueDate" class="form-control">
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="form-group">
-            <label for="type">Type</label>
-            <select id="type" name="type" class="form-control">
-              <option value="">-- Select Type --</option>
-              <option value="P">Personnel</option>
-              <option value="S">Stagiaire</option>
-              <option value="F">Fournisseur</option>
-            </select>
-          </div>
-        </div>
-        <div class="col-md-4 d-flex align-items-end">
-          <button type="submit" class="btn btn-primary">Search</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
         <!-- Page Content -->
+        <% if (userRole !== 'cashier' ) { %>
         <div class="row mb-4">
           <div class="col-xl-3 col-sm-6 mb-3">
             <a class="card text-white bg-success o-hidden h-100" href="/add-check">
@@ -136,7 +139,7 @@
             </a>
           </div>
         </div>
-
+        <% } %>
         <div class="row">
           <% checks.forEach(check => { %>
           <div class="col-xl-3 col-sm-6 mb-3">
@@ -146,7 +149,7 @@
                   <i class="fas fa-fw fa-money-check"></i>
                 </div>
                 <div class="mr-5">Check Number: <%= check.num %></div>
-                <div class="mr-5">Amount: <%= check.amount || 'None' %></div>
+                <div class="mr-5">Amount: <%= check.amount || '0' %></div>
                 <div class="mr-5">Beneficiary: <%= check.beneficiary || 'None' %></div>
                 <div class="mr-5">Creation Date: <%= check.creationdate ? new Date(check.creationdate).toLocaleDateString() : 'None' %></div>
                 <div class="mr-5">Value Date: <%= check.valuedate ? new Date(check.valuedate).toLocaleDateString() : 'None' %></div>
@@ -158,12 +161,16 @@
                 <div class="mr-5">Created By: <%= check.createdby || 'None' %></div>
                 <div class="mr-5">Updated By: <%= check.updatedby || 'None' %></div>
               </div>
+
+              <% if (userRole !== 'agent' && !check.issuedate) { %>
               <a class="card-footer text-white clearfix small z-1" href="/checks/edit/<%= check.num %>">
                 <span class="float-left">Edit</span>
                 <span class="float-right">
                   <i class="fas fa-angle-right"></i>
                 </span>
               </a>
+              <% } %>
+              <% if (userRole !== 'cashier'  && !check.issuedate) { %>
               <a class="card-footer text-white clearfix small z-1" href="#"
                 onclick="event.preventDefault(); document.getElementById('set-to-zero-form-<%= check.num %>').submit();">
                 <span class="float-left">Set to 0</span>
@@ -175,6 +182,7 @@
                 style="display: none;">
                 <input type="hidden" name="_method" value="POST">
               </form>
+
               <a class="card-footer text-white clearfix small z-1" href="#"
                 onclick="event.preventDefault(); document.getElementById('delete-check-form-<%= check.num %>').submit();">
                 <span class="float-left">Delete</span>
@@ -186,37 +194,26 @@
                 style="display: none;">
                 <input type="hidden" name="_method" value="DELETE">
               </form>
-
-             
-
+              <% } %>
             </div>
           </div>
-          <% }) %>
+          <% }); %>
         </div>
-
       </div>
       <!-- /.container-fluid -->
-
-      <!-- Sticky Footer -->
-      <footer class="sticky-footer">
-        <div class="container my-auto">
-          <div class="copyright text-center my-auto">
-            <span>Copyright © Your Website 2024</span>
-          </div>
-        </div>
-      </footer>
     </div>
     <!-- /.content-wrapper -->
   </div>
   <!-- /#wrapper -->
-
   <!-- Bootstrap core JavaScript-->
   <script src="vendor/jquery/jquery.min.js"></script>
   <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
-  <script src="js/sb-admin.min.js"></script>
 </body>
 
 </html>
+
+
+
+
 
 

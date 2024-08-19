@@ -9,16 +9,16 @@
   <meta name="description" content="">
   <meta name="author" content="">
 
-  <title>404 Error</title>
+  <title><%= locals.title ? locals.title : '404 Error' %></title>
 
   <!-- Custom fonts for this template-->
-  <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
 
   <!-- Page level plugin CSS-->
-  <link href="vendor/datatables/dataTables.bootstrap4.css" rel="stylesheet">
+  <link href="/vendor/datatables/dataTables.bootstrap4.css" rel="stylesheet">
 
   <!-- Custom styles for this template-->
-  <link href="css/sb-admin.css" rel="stylesheet">
+  <link href="/css/sb-admin.css" rel="stylesheet">
 
 </head>
 
@@ -26,7 +26,7 @@
 
   <nav class="navbar navbar-expand navbar-dark bg-dark static-top">
 
-    <a class="navbar-brand mr-1" href="/404"> 404 Not Found </a>
+    <a class="navbar-brand mr-1" href="/404"><%= locals.title ? locals.title : '404 Error' %></a>
 
     <button class="btn btn-link btn-sm text-white order-1 order-sm-0" id="sidebarToggle" href="#">
       <i class="fas fa-bars"></i>
@@ -130,12 +130,12 @@
           <li class="breadcrumb-item">
             <a href="/">Dashboard</a>
           </li>
-          <li class="breadcrumb-item active">404 Error</li>
+          <li class="breadcrumb-item active"><%= locals.title ? locals.title : '404 Error' %></li>
         </ol>
 
         <!-- Page Content -->
-        <h1 class="display-1">404</h1>
-        <p class="lead">Page not found. You can
+        <h1 class="display-1"><%= locals.title ? locals.title : '404 Error' %></h1>
+        <p class="lead"><%= locals.message ? locals.message : 'Page Not Found' %>
           <a href="javascript:history.back()">go back</a>
           to the previous page . </p>
 
@@ -182,14 +182,14 @@
   </div>
 
   <!-- Bootstrap core JavaScript-->
-  <script src="vendor/jquery/jquery.min.js"></script>
-  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
   <!-- Core plugin JavaScript-->
-  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+  <script src="/vendor/jquery-easing/jquery.easing.min.js"></script>
 
   <!-- Custom scripts for all pages-->
-  <script src="js/sb-admin.min.js"></script>
+  <script src="/js/sb-admin.min.js"></script>
 
 </body>
 
