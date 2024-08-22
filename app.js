@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import bodyParser from 'body-parser';
 import session from 'express-session';
+import expressLayouts from 'express-ejs-layouts';
 import dotenv from 'dotenv';
 import pkg from 'pg';
 import bcrypt from 'bcryptjs';
@@ -31,6 +32,8 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(expressLayouts);// to not repeat ourselves and to wrap all the pages by the html of main.ejs layout
+app.set('layout','./layout/main');
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));

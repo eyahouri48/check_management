@@ -20,8 +20,8 @@
             <!-- Page Content -->
             <div class="row">
                 <div class="col-lg-8">
-                    <h1 class="page-header">Add a New Check</h1>
-                    <form action="/add-check" method="POST">
+                    <h1 class="page-header">Add Check</h1>
+                    <form action="/checks/add" method="POST">
                         <div class="form-group">
                             <label for="amount">Amount</label>
                             <input type="number" step="0.01" class="form-control" id="amount" name="amount" required>
@@ -50,6 +50,14 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label for="entryDate">Entry Date</label>
+                            <input type="date" class="form-control" id="entryDate" name="entryDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="issueDate">Issue Date</label>
+                            <input type="date" class="form-control" id="issueDate" name="issueDate">
+                        </div>
+                        <div class="form-group">
                             <label for="type">Type</label>
                             <select id="type" name="type" class="form-control" required>
                                 <option value="F">Supplier</option>
@@ -57,8 +65,10 @@
                                 <option value="I">Intern</option>
                             </select>
                         </div>
+                        <input type="hidden" name="createdBy" value="<%= user.iduser %>">
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary">Add Check</button>
+                            <a href="/emission" class="btn btn-secondary">Cancel</a>
                         </div>
                     </form>
                 </div>
@@ -77,8 +87,6 @@
 
 <!-- AJAX Script to Update Accounts Dropdown -->
 <script>
-   console.log('JavaScript is loaded'); 
-  
     async function updateAccounts(bankCode) {
         if (bankCode) {
             try {
@@ -88,8 +96,6 @@
                 }
                 const data = await response.json();
                 
-                console.log('Received accounts data:', data); // Debug log
-
                 const accountSelect = document.getElementById('accountNum');
                 accountSelect.innerHTML = '<option value="">Select Account</option>'; // Clear existing options
 
@@ -107,9 +113,11 @@
         }
     }
 
-
+    // Pre-select account numbers if bank is already selected
+    document.addEventListener('DOMContentLoaded', () => {
+        const bankCode = document.getElementById('bankCode').value;
+        if (bankCode) {
+            updateAccounts(bankCode);
+        }
+    });
 </script>
-
-
-
-

@@ -9,7 +9,6 @@ idUser serial primary key,
 username varchar(50) NOT NULL,
 password varchar(50) NOT NULL,
 fullName varchar(50) NOT NULL,
-function varchar(50) NOT NULL,
 idRole int ,
 FOREIGN KEY (idRole) REFERENCES Role(id),
 supprime boolean default false );
@@ -28,14 +27,14 @@ FOREIGN KEY(bankCode) REFERENCES Bank(code),
 supprime boolean default false );
 
 CREATE TABLE cheque (
-    num SERIAL PRIMARY KEY,-- filtre--
-    amount FLOAT NOT NULL,--filtre--
-    beneficiary VARCHAR(50) NOT NULL,--filtre--
-    creationDate DATE DEFAULT NOW(),--filtre--
-    valueDate DATE,--filtre--
-    entryDate DATE,--filtre--
-    issueDate DATE,--filtre--
-    type CHAR,--filtre--
+    num SERIAL PRIMARY KEY,
+    amount FLOAT NOT NULL,
+    beneficiary VARCHAR(50) NOT NULL,
+    creationDate DATE DEFAULT NOW(),
+    valueDate DATE,
+    entryDate DATE,
+    issueDate DATE,
+    type CHAR,
     bankCode INT NOT NULL,
     accountNum INT,
     createdBy INT,         

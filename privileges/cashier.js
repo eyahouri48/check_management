@@ -9,12 +9,10 @@ const pool = new Pool({
   password: '48?Oracle',
   port: 5432, // Default PostgreSQL port
 });
-
-const ensureAdmin = async (req, res, next) => {
+const ensureCashier = async (req, res, next) => {
     try {
         const userId = req.user.iduser;
 
-        // Query to get the role name of the logged-in user
         const { rows } = await pool.query(
             `SELECT r.name FROM users u
              JOIN role r ON u.idRole = r.id
@@ -22,17 +20,15 @@ const ensureAdmin = async (req, res, next) => {
             [userId]
         );
 
-        // Check if rows[0] exists and has a name property
         if (rows.length > 0 && rows[0].name) {
             console.log(`User role: ${rows[0].name}`);
 
-            if (rows[0].name === 'admin') {
-                return next(); // Allow access if the user is an admin
+            if (rows[0].name === 'cashier') {
+                return next(); // Allow access if the user is a cashier
             } else {
-                return res.status(403).send('Access denied: Admins only.');
+                return res.status(403).send('Access denied: Cashiers only.');
             }
         } else {
-            // Handle the case where the role name could not be found
             return res.status(403).send('Access denied: Role not found.');
         }
     } catch (err) {
@@ -40,4 +36,4 @@ const ensureAdmin = async (req, res, next) => {
         res.status(500).send('Server Error');
     }
 };
-export default ensureAdmin;
+export default ensureCashier ;

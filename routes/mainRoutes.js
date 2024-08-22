@@ -3,8 +3,10 @@ import PDFDocument from 'pdfkit';
 import express from 'express';
 import ensureCheckNotIssued from '../check/check.js';
 import ensureAdmin from '../privileges/admin.js';
-import ensureAdminOrAgent from '../privileges/adminOrAgent.js';
+import ensureAgent from '../privileges/agent.js';
+import ensureCashier from '../privileges/cashier.js';
 import ensureAdminOrCashier from '../privileges/adminOrCashier.js';
+import ensureAgentOrAdmin from '../privileges/adminOrAgent.js';
 import { getFilteredChecks } from '../filter/filter.js'; 
 import pkg from 'pg';
 const { Pool } = pkg;
@@ -22,39 +24,54 @@ const pool = new Pool({
 export default function(passport) {
 
     // Middleware to check if the user is authenticated
-    function ensureAuthenticated(req, res, next) {
-        if (req.isAuthenticated()) {
-            return next();
+    const ensureAuthenticated = async (req, res, next) => {
+        if  (req.isAuthenticated()) {
+            try {
+                const { rows } = await pool.query(`
+                    SELECT u.iduser, u.username, u.fullName, r.name AS role
+                    FROM users u
+                    JOIN role r ON u.idRole = r.id
+                    WHERE u.iduser = $1
+                `, [req.user.iduser]);
+    
+                if (rows.length > 0) {
+                    req.user = rows[0];
+                    return next();
+                } else {
+                    return res.redirect('/login');
+                }
+            } catch (err) {
+                console.error(err);
+                return res.redirect('/login');
+            }
+        } else {
+            res.redirect('/login');
         }
-        res.redirect('/login');
-    }
-
+    };
     router.get('/', ensureAuthenticated, (req, res) => {
         //console.log(req.user.iduser);
-        const userRole = req.user.function ? req.user.function : 'Undefined'; 
-        res.render('dashboard', {userRole});
+        res.render('dashboard');
     });
 
     router.get('/dashboard', ensureAuthenticated, (req, res) => {
-        const userRole = req.user.function ? req.user.function : 'Undefined'; 
-        console.log(userRole);
-        res.render('dashboard',{userRole});
+
+        res.render('dashboard');
     });
 
-    router.get('/checks', ensureAuthenticated, (req, res) => {
-        res.render('checks');
-    });
 
     router.get('/404', (req, res) => {
+       
         res.render('404');
     });
 
     router.get('/charts', ensureAuthenticated, (req, res) => {
-        res.render('charts');
+        const userRole = req.user.function ? req.user.function : 'Undefined'; // Adjust this according to how you store the role
+        res.render('charts',{userRole});
     });
 
     router.get('/tables', ensureAuthenticated, (req, res) => {
-        res.render('tables');
+        const userRole = req.user.function ? req.user.function : 'Undefined'; // Adjust this according to how you store the role
+        res.render('tables',{userRole});
     });
 
     router.get('/login', (req, res) => {
@@ -62,36 +79,48 @@ export default function(passport) {
         res.render('login', { message });
     });
 
-    router.get('/banks', ensureAuthenticated, ensureAdmin ,async (req, res) => {
+    router.get('/banks', ensureAuthenticated,ensureAdmin,  async (req, res) => {
+  
         try {
+
             const result = await pool.query('SELECT code, name FROM bank WHERE supprime = false');
             const banks = result.rows;
-            res.render('banks', { banks });
+            res.render('banks', { banks});
         } catch (err) {
             console.error(err);
             res.status(500).send("Error retrieving banks from database.");
         }
     });
     
-    router.get('/add/bank', ensureAdmin, (req, res) => {
+    router.get('/add/bank',ensureAdmin, (req, res) => {
+     
         res.render('add-bank');
     });
     
 
-    router.post('/banks/add', ensureAdmin, async (req, res) => {
+    router.post('/banks/add',ensureAdmin, async (req, res) => {
         const { name } = req.body;
     
         try {
-           
-            const result = await pool.query('SELECT * FROM bank WHERE LOWER(name) = LOWER($1)', [name]);
-            
-            if (result.rows.length > 0) {
-                
-                return res.status(400).send('Bank with this name already exists.');
+            // Check if the bank name already exists
+            const existingBank = await pool.query('SELECT * FROM bank WHERE LOWER(name) = LOWER($1)', [name]);
+    
+            if (existingBank.rows.length > 0) {
+                // Render the form with an alert message if the bank name exists
+                return res.render('add-bank', { errorMessage: 'Bank with this name already exists.' });
             }
     
-            
-            await pool.query('INSERT INTO bank (name) VALUES ($1)', [name]);
+            // Get the current maximum code from the bank table
+            const result = await pool.query('SELECT COALESCE(MAX(code), 9999) AS max_code FROM bank');
+            const maxCode = result.rows[0].max_code;
+            const nextCode = maxCode + 1;
+    
+            // Ensure the nextCode is at least 10000
+            const finalCode = Math.max(nextCode, 10000);
+    
+            // Insert the new bank with the calculated code
+            await pool.query('INSERT INTO bank (code, name) VALUES ($1, $2)', [finalCode, name]);
+    
             res.redirect('/banks');
         } catch (err) {
             console.error(err.message);
@@ -100,8 +129,11 @@ export default function(passport) {
     });
     
     
+    
+    
    
-    router.get('/banks/edit/:code', ensureAdmin,async (req, res) => {
+    router.get('/banks/edit/:code',ensureAdmin, async (req, res) => {
+     
         const bankCode = req.params.code;
     
         try {
@@ -129,7 +161,7 @@ export default function(passport) {
     });
 
     
-router.post('/banks/delete/:code', ensureAdmin, async (req, res) => {
+router.post('/banks/delete/:code',ensureAdmin, async (req, res) => {
     const bankCode = req.params.code;
 
     try {
@@ -143,20 +175,29 @@ router.post('/banks/delete/:code', ensureAdmin, async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
-router.get('/accounts', ensureAuthenticated, ensureAdmin, async (req, res) => {
+router.get('/accounts',ensureAdmin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT num, bankcode FROM account WHERE supprime = false');
+        // Fetch all accounts with the bank name
+        const result = await pool.query(`
+            SELECT a.num, b.name as bankName
+            FROM account a
+            JOIN bank b ON a.bankCode = b.code
+            WHERE a.supprime = false
+        `);
         const accounts = result.rows;
+        console.log(accounts);
+        // Render the accounts page with the list of accounts
         res.render('accounts', { accounts });
     } catch (err) {
-        console.error(err);
-        res.status(500).send("Error retrieving banks from database.");
+        console.error(err.message);
+        res.status(500).send('Server Error');
     }
 });
 
-router.get('/add-account', ensureAdmin, async (req, res) => {
+
+router.get('/add-account',ensureAdmin, async (req, res) => {
     try {
-        // Fetch all bank codes from the Bank table
+        // Fetch all banks from the Bank table
         const result = await pool.query('SELECT code, name FROM bank WHERE supprime = false');
         const banks = result.rows;
 
@@ -168,23 +209,34 @@ router.get('/add-account', ensureAdmin, async (req, res) => {
     }
 });
 
-  
 
-  router.post('/add-account', ensureAdmin, async (req, res) => {
+router.post('/add-account',ensureAdmin, async (req, res) => {
     const { bankCode } = req.body;
     try {
-      await pool.query(
-        'INSERT INTO account (bankCode) VALUES ($1) RETURNING *',
-        [bankCode]
-      );
-      res.redirect('/accounts');
+        // Determine the new account number
+        const result = await pool.query('SELECT num FROM account ORDER BY num DESC LIMIT 1');
+        const lastAccountNumber = result.rows[0] ? parseInt(result.rows[0].num, 10) : 9999999999;
+        const newAccountNumber = (lastAccountNumber + 1).toString().padStart(11, '0');
+
+        // Insert the new account with the generated number
+        await pool.query(
+            'INSERT INTO account (num, bankCode) VALUES ($1, $2)',
+            [newAccountNumber, bankCode]
+        );
+
+        res.redirect('/accounts');
     } catch (err) {
-      console.error(err);
-      res.status(500).send('Server error');
+        console.error(err.message);
+        res.status(500).send('Server error');
     }
-  });
+});
+
+
+
+
    // GET route to display the edit form
-router.get('/accounts/edit/:num', ensureAdmin, async (req, res) => {
+router.get('/accounts/edit/:num',ensureAdmin, async (req, res) => {
+ 
     const { num } = req.params;
     try {
         const accountQuery = 'SELECT * FROM account WHERE num = $1';
@@ -224,7 +276,7 @@ router.post('/accounts/edit/:num',ensureAdmin, async (req, res) => {
 });
 
 // POST route to "delete" an account by setting supprime to true
-router.post('/accounts/delete/:num', ensureAdmin,  async (req, res) => {
+router.post('/accounts/delete/:num', ensureAdmin, async (req, res) => {
     const { num } = req.params;
 
     try {
@@ -237,96 +289,91 @@ router.post('/accounts/delete/:num', ensureAdmin,  async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
-/* router.get('/emission', async (req, res) => {
+// Fetch accounts by bank code
+// Fetch accounts by bank code
+// Route to get accounts based on bank code
+// Route to get accounts based on bank code
+router.get('/accounts-by-bank', async (req, res) => {
+    const bankCode = parseInt(req.query.bankCode, 10);
     try {
-        // Fetch all active (not deleted) checks
-        const { rows: checks } = await pool.query('SELECT * FROM cheque WHERE supprime = false');
-        
-        res.render('emission', { checks });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Server Error');
-    }
-}); */
-/*router.get('/emission', async (req, res) => {
-    try {
-        // Fetch all active (not deleted) checks along with their creation dates
-        const { rows: checks } = await pool.query('SELECT num, amount, beneficiary, creationDate FROM cheque WHERE supprime = false');
-        
-        res.render('emission', { checks });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Server Error');
-    }
-});*/
-/* router.get('/emission', async (req, res) => {
-    try {
-        // Fetch all relevant columns for checks, even if some are null
-        const { rows: checks } = await pool.query(`
-            SELECT num, amount, beneficiary, creationDate, valueDate, entryDate, issueDate, type, bankCode, accountNum, createdBy, updatedBy
-            FROM cheque
-            WHERE supprime = false
-        `);
-        
-        res.render('emission', { checks });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Server Error');
-    }
-}); */
-router.get('/emission', async (req, res) => {
-    try {
-        // Fetch all relevant columns for checks, even if some are null
-        const { rows: checks } = await pool.query(`
-            SELECT num, amount, beneficiary, creationDate, valueDate, entryDate, issueDate, type, bankCode, accountNum, createdBy, updatedBy
-            FROM cheque
-            WHERE supprime = false
-        `);
+        if (!isNaN(bankCode)) {
+            // Fetch accounts based on the bank code
+            const result = await pool.query(`
+                SELECT num FROM account
+                WHERE bankCode = $1 AND supprime = false
+            `, [bankCode]);
 
-        // Retrieve user role from the session
-        const userRole = req.user.function ? req.user.function : 'Undefined'; // Adjust this according to how you store the role
-        console.log(userRole);
-        // Render the view with checks and user role
-        res.render('emission', { checks, userRole });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Server Error');
-    }
-});
-
-
-// Route to fetch the bank code based on account number
-router.get('/get-bank-code', async (req, res) => {
-    const { accountNum } = req.query;
-    try {
-        const { rows } = await pool.query('SELECT bankCode FROM account WHERE num = $1', [accountNum]);
-        if (rows.length > 0) {
-            res.json({ bankCode: rows[0].bankcode });
+            // Send the accounts as JSON
+            res.json({ accounts: result.rows });
         } else {
-            res.status(404).send('Account not found');
+            res.status(400).send('Invalid bank code');
         }
     } catch (err) {
-        console.error(err);
+        console.error(err.message);
         res.status(500).send('Server Error');
     }
 });
 
-router.get('/add-check', ensureAdminOrAgent, (req, res) => {
-    res.render('add-check');
-});
-
-router.post('/add-check', ensureAdminOrAgent, async (req, res) => {
-    const { amount, beneficiary, valueDate, bankCode, accountNum } = req.body;
+router.get('/emission', ensureAuthenticated, async (req, res) => {
     try {
-        // Check if the accountNum already exists with a different beneficiary
-        const existingCheck = await pool.query(
-            'SELECT * FROM cheque WHERE accountNum = $1 AND beneficiary != $2',
-            [accountNum, beneficiary]
-        );
+        const { rows: checks } = await pool.query(`
+            SELECT num, amount, beneficiary, creationDate, valueDate, entryDate, issueDate, type, bankCode, accountNum, createdBy, updatedBy
+            FROM cheque
+            WHERE supprime = false
+        `);
 
-        if (existingCheck.rows.length > 0) {
-            // If an accountNum already has a different beneficiary, return an error
-            return res.status(400).send('This account number is already associated with a different beneficiary.');
+        // Check if req.user exists and log its contents
+        console.log('User:', req.user);
+       // console.log(req.user.role);
+        //console.log(checks);
+        res.render('emission', { 
+            checks,
+            userRole: req.user ? req.user.role : 'guest' // Pass the user's role to the template
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+}); 
+
+
+
+
+
+router.get('/add-check', ensureAgentOrAdmin, async (req, res) => {
+    try {
+        // Fetch all bank codes and names from the Bank table
+        const bankResult = await pool.query('SELECT code, name FROM bank WHERE supprime = false');
+        const banks = bankResult.rows;
+
+        // Render the add-check page with the list of banks
+        res.render('add-check', { banks });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+/* router.get('/add-check-admin',ensureAuthenticated, ensureAdmin, async (req, res) => {
+    try {
+        // Fetch all bank codes and names from the Bank table
+        const bankResult = await pool.query('SELECT code, name FROM bank WHERE supprime = false');
+        const banks = bankResult.rows;
+
+        // Render the add-check page with the list of banks
+        res.render('add-check-admin', { banks });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+}); */
+
+router.post('/add-check', ensureAgentOrAdmin, async (req, res) => {
+    const { amount, beneficiary, valueDate, bankCode, accountNum, type } = req.body;
+
+    try {
+        // Check if the amount is provided
+        if (!amount || amount <= 0) {
+            return res.status(400).send('Amount is required and must be greater than zero.');
         }
 
         const year = new Date().getFullYear();
@@ -336,10 +383,11 @@ router.post('/add-check', ensureAdminOrAgent, async (req, res) => {
         let nextNum = rows[0].maxnum ? parseInt(String(rows[0].maxnum).slice(4)) + 1 : 1;
         const formattedNum = `${year}${nextNum.toString().padStart(6, '0')}`;
 
+        // Insert the new check into the database
         await pool.query(
-            `INSERT INTO cheque (num, amount, beneficiary, valueDate, bankCode, accountNum, createdBy) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [formattedNum, amount, beneficiary, valueDate, bankCode, accountNum, req.user.iduser]
+            `INSERT INTO cheque (num, amount, beneficiary, valueDate, bankCode, accountNum, type, createdBy) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [formattedNum, amount, beneficiary, valueDate, bankCode, accountNum, type, req.user.iduser]
         );
 
         res.redirect('/emission');
@@ -349,24 +397,11 @@ router.post('/add-check', ensureAdminOrAgent, async (req, res) => {
     }
 });
 
-router.post('/checks/delete/:num',ensureCheckNotIssued , ensureAdminOrAgent, async (req, res) => {
-    const { num } = req.params;
-  
-    try {
-   
-      await pool.query('UPDATE cheque SET supprime = true WHERE num = $1', [num]);
-  
-    
-      res.redirect('/emission');
-    } catch (err) {
-      console.error('Error deleting check:', err);
-      res.status(500).send('Server Error');
-    }
-  });
 
 
 
-router.get('/checks/edit/:num',ensureCheckNotIssued,ensureAdminOrCashier, async (req, res) => {
+/* router.get('/checks/edit/:num',ensureCheckNotIssued, async (req, res) => {
+
     const checkNum = parseInt(req.params.num, 10);
     console.log(`Edit route called with num: ${checkNum}`);
     try {
@@ -383,8 +418,281 @@ router.get('/checks/edit/:num',ensureCheckNotIssued,ensureAdminOrCashier, async 
 });
 
   
-  router.post('/checks/update/:num',ensureAdminOrCashier, async (req, res) => {
+router.post('/checks/update/:num', async (req, res) => {
     if (req.query._method === 'PUT') {
+        const checkNum = parseInt(req.params.num, 10);
+        const { entryDate, issueDate, type } = req.body;
+        const updatedBy = req.user ? req.user.iduser : null;
+
+        try {
+            // Initialize the query and parameters array
+            let query = 'UPDATE cheque SET ';
+            const queryParams = [];
+            let queryIndex = 1;
+
+            // Conditionally add each attribute to the query if it's provided
+            if (entryDate) {
+                query += `entryDate = $${queryIndex}, `;
+                queryParams.push(entryDate);
+                queryIndex++;
+            }
+            if (issueDate) {
+                query += `issueDate = $${queryIndex}, `;
+                queryParams.push(issueDate);
+                queryIndex++;
+            }
+            if (type) {
+                query += `type = $${queryIndex}, `;
+                queryParams.push(type);
+                queryIndex++;
+            }
+
+            // Always add the updatedBy field and checkNum as they are required
+            query += `updatedBy = $${queryIndex} WHERE num = $${queryIndex + 1}`;
+            queryParams.push(updatedBy, checkNum);
+
+            // Execute the query
+            await pool.query(query, queryParams);
+
+            res.redirect('/emission');
+        } catch (error) {
+            console.error(error);
+            res.status(500).send('Server error');
+        }
+    } else {
+        res.status(405).send('Method Not Allowed');
+    }
+}); */
+router.get('/checks/edit/admin/:num', ensureAdmin, ensureCheckNotIssued, async (req, res) => {
+    try {
+        const checkNum = req.params.num;
+
+        // Fetch check details by check number
+        const checkQuery = 'SELECT * FROM cheque WHERE num = $1';
+        const checkResult = await pool.query(checkQuery, [checkNum]);
+
+        if (checkResult.rows.length === 0) {
+            return res.status(404).render('404', { message: 'Check not found' });
+        }
+
+        const check = checkResult.rows[0];
+
+        // Fetch all banks
+        const banksQuery = 'SELECT * FROM bank';
+        const banksResult = await pool.query(banksQuery);
+        const banks = banksResult.rows;
+
+        // Fetch accounts for the selected bank if needed
+        const accountsQuery = 'SELECT * FROM account WHERE bankCode = $1';
+        const accountsResult = await pool.query(accountsQuery, [check.bankCode]);
+        const accounts = accountsResult.rows;
+
+        // Render the edit-check-admin page
+        res.render('edit-check-admin', {
+            check,
+            banks,
+            accounts,
+            user: req.user
+        });
+    } catch (error) {
+        console.error('Error fetching check details:', error);
+        res.status(500).render('500', { message: 'Internal Server Error' });
+    }
+});
+
+// Route for updating a check by an admin
+router.post('/checks/update/admin/:num', ensureAdmin, async (req, res) => {
+    const checkNum = req.params.num;
+    const { amount, beneficiary, valueDate, bankCode, accountNum, entryDate, issueDate, type, updatedBy } = req.body;
+
+    try {
+        // Update the check details in the database
+        const updateQuery = `
+            UPDATE cheque
+            SET 
+                amount = $1,
+                beneficiary = $2,
+                valueDate = $3,
+                bankCode = $4,
+                accountNum = $5,
+                entryDate = $6,
+                issueDate = $7,
+                type = $8,
+                updatedBy = $9
+            WHERE num = $10
+        `;
+        await pool.query(updateQuery, [
+            amount,
+            beneficiary,
+            valueDate || null,
+            bankCode,
+            accountNum,
+            entryDate || null,
+            issueDate || null,
+            type,
+            updatedBy,
+            checkNum
+            
+        ]);
+
+        res.redirect('/emission'); // Redirect to the list of checks or another relevant page
+    } catch (error) {
+        console.error('Error updating check:', error);
+        res.status(500).render('404', { message: 'Internal Server Error' });
+    }
+});
+
+
+router.get('/checks/edit/agent/:num', ensureAgent, async (req, res) => {
+    const checkNum = parseInt(req.params.num, 10);
+  
+    try {
+      // Fetch check details
+      const checkResult = await pool.query('SELECT * FROM cheque WHERE num = $1', [checkNum]);
+      const check = checkResult.rows[0];
+  
+      if (!check) {
+        return res.status(404).send('Check not found');
+      }
+  
+      // Fetch list of banks
+      const banksResult = await pool.query('SELECT * FROM bank');
+      const banks = banksResult.rows;
+  
+      // Fetch list of accounts
+      const accountsResult = await pool.query('SELECT * FROM account WHERE bankCode = $1', [check.bankCode]);
+      const accounts = accountsResult.rows;
+  
+      // Render the agent's edit check page
+      res.render('edit-check-agent', {
+        check,
+        banks,
+        accounts,
+        req,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Server Error');
+    }
+  });
+  router.get('/checks/edit/cashier/:num', ensureCashier,ensureCheckNotIssued, async (req, res) => {
+    const checkNum = parseInt(req.params.num, 10);
+  
+    try {
+      // Fetch check details
+      const checkResult = await pool.query('SELECT * FROM cheque WHERE num = $1', [checkNum]);
+      const check = checkResult.rows[0];
+  
+      if (!check) {
+        return res.status(404).send('Check not found');
+      }
+  
+      // Render the cashier's edit check page
+      res.render('edit-check-cashier', {
+        check,
+        req,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Server Error');
+    }
+  });
+
+// POST route to update check by Agent
+// POST route to update check by Agent
+// POST route to update check by Agent
+/* router.post('/checks/update/agent/:num', ensureAgent, async (req, res) => {
+    const checkNum = parseInt(req.params.num, 10);
+    const { amount, beneficiary, valueDate, bankCode, accountNum } = req.body;
+
+    try {
+        // Update the check details in the database
+        const updateQuery = `
+            UPDATE cheque
+            SET amount = $1,
+                beneficiary = $2,
+                valueDate = $3,
+                bankCode = $4,
+                accountNum = $5,
+                updatedBy = $6
+            WHERE num = $7
+            RETURNING *;
+        `;
+
+        const updateValues = [
+            amount, 
+            beneficiary, 
+            valueDate || null, 
+            bankCode, 
+            accountNum || null, 
+            req.user.iduser, // The ID of the user making the update
+            checkNum
+        ];
+
+        const result = await pool.query(updateQuery, updateValues);
+
+        if (result.rowCount === 0) {
+            return res.status(404).send('Check not found or no changes made');
+        }
+
+        // Redirect back to the emission page after a successful update
+        res.redirect('/emission');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+}); */
+router.post('/checks/update/agent/:num', ensureAgent, async (req, res) => {
+    const checkNum = parseInt(req.params.num, 10);
+
+    // Log the incoming form data to debug
+    console.log('Form data:', req.body);
+
+    const { amount, beneficiary, valueDate, bankCode, accountNum, updatedBy } = req.body;
+
+    try {
+        // Verify that the bankCode is being correctly retrieved from the form
+        console.log('Bank Code:', bankCode);
+        console.log('Account Number:', accountNum);
+        console.log('Updated By:', updatedBy);
+
+        const updateQuery = `
+            UPDATE cheque
+            SET amount = $1,
+                beneficiary = $2,
+                valueDate = $3,
+                bankCode = $4,
+                accountNum = $5,
+                updatedBy = $6
+            WHERE num = $7
+            RETURNING *;
+        `;
+
+        const updateValues = [
+            amount, 
+            beneficiary, 
+            valueDate || null, 
+            bankCode, 
+            accountNum || null, 
+            updatedBy, // The ID of the user making the update
+            checkNum
+        ];
+
+        const result = await pool.query(updateQuery, updateValues);
+
+        if (result.rowCount === 0) {
+            return res.status(404).send('Check not found or no changes made');
+        }
+
+        // Redirect back to the emission page after a successful update
+        res.redirect('/emission');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+router.post('/checks/update/cashier/:num',ensureCashier, async (req, res) => {
       const checkNum = parseInt(req.params.num, 10);
       const { entryDate, issueDate, type } = req.body;
       const updatedBy = req.user ? req.user.iduser : null;
@@ -399,33 +707,34 @@ router.get('/checks/edit/:num',ensureCheckNotIssued,ensureAdminOrCashier, async 
         console.error(error);
         res.status(500).send('Server error');
       }
-    } else {
-      res.status(405).send('Method Not Allowed');
-    }
+  
   });
-  router.post('/checks/set-to-zero/:num', ensureCheckNotIssued,ensureAdminOrAgent, async (req, res) => {
+
+router.post('/checks/delete/:num',ensureCheckNotIssued , async (req, res) => {
     const { num } = req.params;
   
     try {
-    
-      await pool.query('UPDATE cheque SET amount = 0 WHERE num = $1', [num]);
+   
+      await pool.query('UPDATE cheque SET supprime = true WHERE num = $1', [num]);
   
-      
+    
       res.redirect('/emission');
     } catch (err) {
-      console.error('Error setting check amount to 0:', err);
+      console.error('Error deleting check:', err);
       res.status(500).send('Server Error');
     }
   });
   
   router.get('/search-results', async (req, res) => {
-    const { creationDate, valueDate, entryDate, issueDate, type } = req.query;
   
+    const { creationDate, valueDate, entryDate, issueDate, type } = req.query;
+    
     try {
       const filteredChecks = await getFilteredChecks({ creationDate, valueDate, entryDate, issueDate, type });
       res.render('search-results', {
         filteredChecks,
-        query: req.query // Pass the query parameters to the view
+        query: req.query,
+       
       });
     } catch (error) {
       console.error(error);

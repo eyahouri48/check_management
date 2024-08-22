@@ -14,32 +14,32 @@
                 <li class="breadcrumb-item">
                     <a href="/emission">Checks</a>
                 </li>
-                <li class="breadcrumb-item active">Add Check</li>
+                <li class="breadcrumb-item active">Modify Check</li>
             </ol>
 
             <!-- Page Content -->
             <div class="row">
                 <div class="col-lg-8">
-                    <h1 class="page-header">Add a New Check</h1>
-                    <form action="/add-check" method="POST">
+                    <h1 class="page-header">Modify Check</h1>
+                    <form action="/checks/update/agent/<%= check.num %>?_method=POST" method="POST">
                         <div class="form-group">
                             <label for="amount">Amount</label>
-                            <input type="number" step="0.01" class="form-control" id="amount" name="amount" required>
+                            <input type="number" step="0.01" class="form-control" id="amount" name="amount" value="<%= check.amount %>" required>
                         </div>
                         <div class="form-group">
                             <label for="beneficiary">Beneficiary</label>
-                            <input type="text" class="form-control" id="beneficiary" name="beneficiary" required>
+                            <input type="text" class="form-control" id="beneficiary" name="beneficiary" value="<%= check.beneficiary %>" required>
                         </div>
                         <div class="form-group">
                             <label for="valueDate">Value Date</label>
-                            <input type="date" class="form-control" id="valueDate" name="valueDate">
+                            <input type="date" class="form-control" id="valueDate" name="valueDate" value="<%= check.valueDate ? new Date(check.valueDate).toISOString().split('T')[0] : '' %>">
                         </div>
                         <div class="form-group">
                             <label for="bankCode">Bank</label>
                             <select id="bankCode" name="bankCode" class="form-control" onchange="updateAccounts(this.value)" required>
                                 <option value="">Select Bank</option>
                                 <% banks.forEach(bank => { %>
-                                    <option value="<%= bank.code %>"><%= bank.name %></option>
+                                    <option value="<%= bank.code %>" <%= check.bankCode === bank.code ? 'selected' : '' %>><%= bank.name %></option>
                                 <% }) %>
                             </select>
                         </div>
@@ -47,18 +47,23 @@
                             <label for="accountNum">Account Number</label>
                             <select id="accountNum" name="accountNum" class="form-control" required>
                                 <option value="">Select Account</option>
+                                <% accounts.forEach(account => { %>
+                                    <option value="<%= account.num %>" <%= check.accountNum === account.num ? 'selected' : '' %>><%= account.num %></option>
+                                <% }) %>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="type">Type</label>
                             <select id="type" name="type" class="form-control" required>
-                                <option value="F">Supplier</option>
-                                <option value="P">Personnel</option>
-                                <option value="I">Intern</option>
+                                <option value="F" <%= check.type === 'F' ? 'selected' : '' %>>Supplier</option>
+                                <option value="P" <%= check.type === 'P' ? 'selected' : '' %>>Personnel</option>
+                                <option value="I" <%= check.type === 'I' ? 'selected' : '' %>>Intern</option>
                             </select>
                         </div>
+                        <input type="hidden" name="updatedBy" value="<%= req.user.iduser %>">
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary">Add Check</button>
+                            <button type="submit" class="btn btn-primary">Modify Check</button>
+                            <a href="/emission" class="btn btn-secondary">Cancel</a>
                         </div>
                     </form>
                 </div>
@@ -77,8 +82,6 @@
 
 <!-- AJAX Script to Update Accounts Dropdown -->
 <script>
-   console.log('JavaScript is loaded'); 
-  
     async function updateAccounts(bankCode) {
         if (bankCode) {
             try {
@@ -88,8 +91,6 @@
                 }
                 const data = await response.json();
                 
-                console.log('Received accounts data:', data); // Debug log
-
                 const accountSelect = document.getElementById('accountNum');
                 accountSelect.innerHTML = '<option value="">Select Account</option>'; // Clear existing options
 
@@ -107,9 +108,6 @@
         }
     }
 
-
+    // Pre-select account numbers if bank is already selected
+ 
 </script>
-
-
-
-
