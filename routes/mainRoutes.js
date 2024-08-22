@@ -387,7 +387,7 @@ router.post('/add-check', ensureAgentOrAdmin, async (req, res) => {
         await pool.query(
             `INSERT INTO cheque (num, amount, beneficiary, valueDate, bankCode, accountNum, type, createdBy) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [formattedNum, amount, beneficiary, valueDate, bankCode, accountNum, type, req.user.iduser]
+            [formattedNum, amount, beneficiary, valueDate, bankCode, accountNum, type, req.user.fullname]
         );
 
         res.redirect('/emission');
@@ -695,7 +695,7 @@ router.post('/checks/update/agent/:num', ensureAgent, async (req, res) => {
 router.post('/checks/update/cashier/:num',ensureCashier, async (req, res) => {
       const checkNum = parseInt(req.params.num, 10);
       const { entryDate, issueDate, type } = req.body;
-      const updatedBy = req.user ? req.user.iduser : null;
+      const updatedBy = req.user ? req.user.fullname : undefined;
   
       try {
         await pool.query(

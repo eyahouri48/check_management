@@ -42,7 +42,7 @@
                   <option value="I" <%= check.type === 'I' ? 'selected' : '' %>>Intern</option>
                 </select>
               </div>
-              <input type="hidden" name="updatedBy" value="<%= req.user.iduser %>">
+              <input type="hidden" name="updatedBy" value="<%= req.user.fullname %>">
               <button type="submit" class="btn btn-primary">Update Check</button>
               <a href="/emission" class="btn btn-secondary">Cancel</a>
             </form>

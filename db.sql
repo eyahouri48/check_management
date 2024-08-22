@@ -37,11 +37,9 @@ CREATE TABLE cheque (
     type CHAR,
     bankCode INT NOT NULL,
     accountNum INT,
-    createdBy INT,         
-    updatedBy INT,        
+    createdBy VARCHAR(50),         
+    updatedBy VARCHAR(50),        
     FOREIGN KEY (accountNum) REFERENCES Account(num),
-    FOREIGN KEY (createdBy) REFERENCES users(idUser),
-    FOREIGN KEY (updatedBy) REFERENCES users(idUser),
     supprime BOOLEAN DEFAULT FALSE
 );
 

@@ -68,7 +68,7 @@
                                 <option value="I" <%= check.type === 'I' ? 'selected' : '' %>>Intern</option>
                             </select>
                         </div>
-                        <input type="hidden" name="updatedBy" value="<%= user.iduser %>">
+                        <input type="hidden" name="updatedBy" value="<%= user.fullname %>">
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary">Modify Check</button>
                             <a href="/emission" class="btn btn-secondary">Cancel</a>
