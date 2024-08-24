@@ -420,7 +420,7 @@ router.get('/accounts-by-bank', async (req, res) => {
     }
 });
 
-router.get('/emission', ensureAuthenticated, async (req, res) => {
+/* router.get('/emission', ensureAuthenticated, async (req, res) => {
     try {
         const { rows: checks } = await pool.query(`
             SELECT num, amount, beneficiary, creationDate, valueDate, entryDate, issueDate, type, bankCode, accountNum, createdBy, updatedBy
@@ -439,7 +439,29 @@ router.get('/emission', ensureAuthenticated, async (req, res) => {
         console.error(err);
         res.status(500).send('Server Error');
     }
-}); 
+}); */
+
+router.get('/emission', ensureAuthenticated, async (req, res) => {
+    try {
+        const { rows: checks } = await pool.query(`
+            SELECT c.num, c.amount, c.beneficiary, c.creationDate, c.valueDate, c.entryDate, c.issueDate, c.type, 
+                   c.bankCode, c.accountNum, c.createdBy, c.updatedBy,c.lastupdatedby, b.name AS bankName
+            FROM cheque c
+            LEFT JOIN bank b ON c.bankCode = b.code
+            WHERE c.supprime = false
+        `);
+
+        res.render('emission', { 
+            checks,
+            userRole: req.user ? req.user.role : 'guest' // Pass the user's role to the template
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+
 
 
 
@@ -607,7 +629,7 @@ router.get('/checks/edit/admin/:num', ensureAdmin, ensureCheckNotIssued, async (
 
 
 // Route for updating a check by an admin
-router.post('/checks/update/admin/:num', ensureAdmin, async (req, res) => {
+/* router.post('/checks/update/admin/:num', ensureAdmin, async (req, res) => {
     const checkNum = req.params.num;
     const { amount, beneficiary, valueDate, bankCode, accountNum, entryDate, issueDate, type, updatedBy } = req.body;
 
@@ -639,6 +661,51 @@ router.post('/checks/update/admin/:num', ensureAdmin, async (req, res) => {
             updatedBy,
             checkNum
             
+        ]);
+
+        res.redirect('/emission'); // Redirect to the list of checks or another relevant page
+    } catch (error) {
+        console.error('Error updating check:', error);
+        res.status(500).render('404', { message: 'Internal Server Error' });
+    }
+}); */
+router.post('/checks/update/admin/:num', ensureAdmin, async (req, res) => {
+    const checkNum = req.params.num;
+    const { amount, beneficiary, valueDate, bankCode, accountNum, entryDate, issueDate, type } = req.body;
+    const updatedBy = req.user ? req.user.fullname : undefined;
+
+    try {
+        // Update the check details in the database
+        const updateQuery = `
+            UPDATE cheque
+            SET 
+                amount = $1,
+                beneficiary = $2,
+                valueDate = $3::date,
+                bankCode = $4,
+                accountNum = $5,
+                entryDate = $6::date,
+                issueDate = $7::date,
+                type = $8,
+                updatedBy = $9,
+                lastUpdatedBy = CASE 
+                    WHEN $7 IS NOT NULL THEN $10 
+                    ELSE lastUpdatedBy 
+                END
+            WHERE num = $11
+        `;
+        await pool.query(updateQuery, [
+            amount,
+            beneficiary,
+            valueDate || null,
+            bankCode,
+            accountNum,
+            entryDate || null,
+            issueDate || null,
+            type,
+            updatedBy,
+            req.user.fullname,
+            checkNum
         ]);
 
         res.redirect('/emission'); // Redirect to the list of checks or another relevant page
@@ -720,7 +787,7 @@ router.get('/checks/edit/agent/:num', ensureAgent, async (req, res) => {
                 valueDate = $3,
                 bankCode = $4,
                 accountNum = $5,
-                updatedBy = $6
+                updatedBy = $6,
             WHERE num = $7
             RETURNING *;
         `;
@@ -798,7 +865,7 @@ router.post('/checks/update/agent/:num', ensureAgent, async (req, res) => {
     }
 });
 
-router.post('/checks/update/cashier/:num',ensureCashier, async (req, res) => {
+ /*router.post('/checks/update/cashier/:num',ensureCashier,ensureCheckNotIssued, async (req, res) => {
       const checkNum = parseInt(req.params.num, 10);
       const { entryDate, issueDate, type } = req.body;
       const updatedBy = req.user ? req.user.fullname : undefined;
@@ -814,7 +881,35 @@ router.post('/checks/update/cashier/:num',ensureCashier, async (req, res) => {
         res.status(500).send('Server error');
       }
   
-  });
+  }); */
+  router.post('/checks/update/cashier/:num', ensureCashier, async (req, res) => {
+    const checkNum = parseInt(req.params.num, 10);
+    const { entryDate, issueDate, type } = req.body;
+    const updatedBy = req.user ? req.user.fullname : undefined;
+
+    try {
+        await pool.query(`
+            UPDATE cheque
+            SET 
+                entryDate = $1::date,
+                issueDate = $2::date,
+                type = $3,
+                updatedBy = $4,
+                lastUpdatedBy = CASE 
+                    WHEN $2 IS NOT NULL THEN $5 
+                    ELSE lastUpdatedBy 
+                END
+            WHERE num = $6
+        `, [entryDate, issueDate, type, updatedBy, req.user.fullname, checkNum]);
+
+        res.redirect('/emission');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Server error');
+    }
+});
+
+
 
 router.post('/checks/delete/:num',ensureCheckNotIssued , async (req, res) => {
     const { num } = req.params;
