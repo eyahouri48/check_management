@@ -1,42 +1,50 @@
- <!-- Navbar -->
- <%- include("./partials/navbar.ejs"); %>
+<!-- Navbar -->
+<%- include("./partials/navbar.ejs"); %>
 
-  <div id="wrapper">
-    <%- include("./partials/sidebar.ejs"); %>
+<div id="wrapper">
+  <%- include("./partials/sidebar.ejs"); %>
 
-    <div id="content-wrapper">
-      <div class="container-fluid">
-        <!-- Breadcrumbs-->
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item">
-            <a href="/">Dashboard</a>
-          </li>
-          <li class="breadcrumb-item active">Edit Bank</li>
-        </ol>
+  <div id="content-wrapper">
+    <div class="container-fluid">
+      <!-- Breadcrumbs-->
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+          <a href="/">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item active">Edit Bank</li>
+      </ol>
 
-        <!-- Page Content -->
-        <h1>Edit Bank</h1>
-        <hr>
-        <form action="/banks/edit/<%= bank.code %>" method="POST">
-          <div class="form-group">
-            <label for="code">Bank Code</label>
-            <input type="text" class="form-control" id="code" name="code" value="<%= bank.code %>" readonly>
-          </div>
-          <div class="form-group">
-            <label for="name">Bank Name</label>
-            <input type="text" class="form-control" id="name" name="name" value="<%= bank.name %>" required>
-          </div>
-          <button type="submit" class="btn btn-primary">Update Bank</button>
-        </form>
+      <!-- Page Content -->
+      <h1>Edit Bank</h1>
+      <hr>
 
-      </div>
-      <!-- /.container-fluid -->
+      <!-- Alert for Error Messages -->
+      <% if (typeof errorMessage !== 'undefined') { %>
+        <div class="alert alert-danger">
+          <%= errorMessage %>
+        </div>
+      <% } %>
 
-      <!-- Sticky Footer -->
-      <%- include("./partials/footer.ejs"); %>
+      <form action="/banks/edit/<%= bank.code %>" method="POST">
+        <div class="form-group">
+          <label for="name">Bank Name</label>
+          <input type="text" class="form-control" id="name" name="name" value="<%= bank.name %>" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Update Bank</button>
+      </form>
+
     </div>
-    <!-- /.content-wrapper -->
+    <!-- /.container-fluid -->
+
+    <!-- Sticky Footer -->
+    <%- include("./partials/footer.ejs"); %>
   </div>
-  <!-- /#wrapper -->
- <!-- Logout Modal-->
- <%- include("./partials/logoutModel.ejs"); %>
+  <!-- /.content-wrapper -->
+</div>
+<!-- /#wrapper -->
+
+<!-- Logout Modal-->
+<%- include("./partials/logoutModel.ejs"); %>
+
+
+

@@ -98,35 +98,77 @@ export default function(passport) {
     });
     
 
-    router.post('/banks/add',ensureAdmin, async (req, res) => {
-        const { name } = req.body;
+    /* router.post('/banks/add', ensureAdmin, async (req, res) => {
+        const { name, code } = req.body;
     
         try {
-            // Check if the bank name already exists
-            const existingBank = await pool.query('SELECT * FROM bank WHERE LOWER(name) = LOWER($1)', [name]);
+            // Check if the bank name or code already exists
+            const nameQuery = 'SELECT * FROM bank WHERE name = $1';
+            const codeQuery = 'SELECT * FROM bank WHERE code = $1';
     
-            if (existingBank.rows.length > 0) {
-                // Render the form with an alert message if the bank name exists
-                return res.render('add-bank', { errorMessage: 'Bank with this name already exists.' });
+            const nameResult = await pool.query(nameQuery, [name]);
+            const codeResult = await pool.query(codeQuery, [code]);
+    
+            if (nameResult.rows.length > 0) {
+                // Bank name already exists
+                return res.render('add-bank', { errorMessage: 'Bank name already exists.' });
             }
     
-            // Get the current maximum code from the bank table
-            const result = await pool.query('SELECT COALESCE(MAX(code), 9999) AS max_code FROM bank');
-            const maxCode = result.rows[0].max_code;
-            const nextCode = maxCode + 1;
+            if (codeResult.rows.length > 0) {
+                // Bank code already exists
+                return res.render('add-bank', { errorMessage: 'Bank code already exists.' });
+            }
     
-            // Ensure the nextCode is at least 10000
-            const finalCode = Math.max(nextCode, 10000);
+            // Insert new bank if no duplicates are found
+            const insertQuery = 'INSERT INTO bank (name, code) VALUES ($1, $2)';
+            await pool.query(insertQuery, [name, code]);
     
-            // Insert the new bank with the calculated code
-            await pool.query('INSERT INTO bank (code, name) VALUES ($1, $2)', [finalCode, name]);
-    
+            // Redirect to the bank list or another page after successful insertion
             res.redirect('/banks');
-        } catch (err) {
-            console.error(err.message);
-            res.status(500).send('Server Error');
+        } catch (error) {
+            console.error('Error adding bank:', error);
+            res.render('add-bank', { errorMessage: 'An error occurred while adding the bank.' });
+        }
+    }); */
+    router.post('/banks/add', ensureAdmin, async (req, res) => {
+        const { name, code } = req.body;
+    
+        try {
+            // Check if the bank code is exactly 5 digits
+            if (!/^\d{5}$/.test(code)) {
+                return res.render('add-bank', { errorMessage: 'Bank code should be exactly 5 digits.' });
+            }
+    
+            // Check if the bank name or code already exists
+            const nameQuery = 'SELECT * FROM bank WHERE name = $1';
+            const codeQuery = 'SELECT * FROM bank WHERE code = $1';
+    
+            const nameResult = await pool.query(nameQuery, [name]);
+            const codeResult = await pool.query(codeQuery, [code]);
+    
+            if (nameResult.rows.length > 0) {
+                // Bank name already exists
+                return res.render('add-bank', { errorMessage: 'Bank name already exists.' });
+            }
+    
+            if (codeResult.rows.length > 0) {
+                // Bank code already exists
+                return res.render('add-bank', { errorMessage: 'Bank code already exists.' });
+            }
+    
+            // Insert new bank if no duplicates are found
+            const insertQuery = 'INSERT INTO bank (name, code) VALUES ($1, $2)';
+            await pool.query(insertQuery, [name, code]);
+    
+            // Redirect to the bank list or another page after successful insertion
+            res.redirect('/banks');
+        } catch (error) {
+            console.error('Error adding bank:', error);
+            res.render('add-bank', { errorMessage: 'An error occurred while adding the bank.' });
         }
     });
+    
+    
     
     
     
@@ -147,53 +189,105 @@ export default function(passport) {
     });
     
 
-     router.post('/banks/edit/:code',ensureAdmin, async (req, res) => {
+    router.post('/banks/edit/:code', ensureAdmin, async (req, res) => {
         const bankCode = req.params.code;
         const { name } = req.body;
     
         try {
-            await pool.query('UPDATE bank SET name = $1 WHERE code = $2', [name, bankCode]);
-            res.redirect('/banks'); 
+            // Check if the bank name already exists (case-insensitive)
+            const existingBank = await pool.query(
+                'SELECT * FROM bank WHERE LOWER(name) = LOWER($1) AND code != $2',
+                [name, bankCode]
+            );
+    
+            if (existingBank.rows.length > 0) {
+                // Bank name already exists, render the edit-bank page with an error message
+                return res.render('edit-bank', {
+                    bank: { code: bankCode, name: name },
+                    errorMessage: 'Bank name already exists. Please choose a different name.'
+                });
+            }
+    
+            // If no conflict, proceed with the update
+            await pool.query(
+                'UPDATE bank SET name = $1 WHERE code = $2',
+                [name, bankCode]
+            );
+    
+            res.redirect('/banks');
         } catch (err) {
             console.error(err.message);
             res.status(500).send('Server Error');
         }
     });
+    
+    
 
     
-router.post('/banks/delete/:code',ensureAdmin, async (req, res) => {
-    const bankCode = req.params.code;
-
-    try {
-        // Update the 'supprime' field of the bank with the given code
-        await pool.query('UPDATE bank SET supprime = true WHERE code = $1', [bankCode]);
-
-        // Redirect back to the view banks page
-        res.redirect('/banks');
-    } catch (error) {
-        console.error('Error deleting bank:', error);
-        res.status(500).send('Server Error');
-    }
-});
-router.get('/accounts',ensureAdmin, async (req, res) => {
-    try {
-        // Fetch all accounts with the bank name
-        const result = await pool.query(`
-            SELECT a.num, b.name as bankName
-            FROM account a
-            JOIN bank b ON a.bankCode = b.code
-            WHERE a.supprime = false
-        `);
-        const accounts = result.rows;
-        console.log(accounts);
-        // Render the accounts page with the list of accounts
-        res.render('accounts', { accounts });
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
-
+    router.post('/banks/edit/:code', ensureAdmin, async (req, res) => {
+        const bankCode = req.params.code;
+        const { name } = req.body;
+    
+        try {
+            // Check if the new bank name already exists
+            const nameExistsQuery = 'SELECT * FROM bank WHERE name = $1 AND code != $2';
+            const nameExistsResult = await pool.query(nameExistsQuery, [name, bankCode]);
+    
+            if (nameExistsResult.rows.length > 0) {
+                // Bank name already exists
+                return res.render('edit-bank', {
+                    bank: { code: bankCode, name },
+                    errorMessage: 'Bank name already exists. Please choose a different name.'
+                });
+            }
+    
+            // Update bank details if no conflicts
+            const updateQuery = 'UPDATE bank SET name = $1 WHERE code = $2';
+            await pool.query(updateQuery, [name, bankCode]);
+    
+            res.redirect('/banks'); // Redirect to the bank list or another page
+        } catch (err) {
+            console.error('Error updating bank:', err.message);
+            res.render('edit-bank', {
+                bank: { code: bankCode, name },
+                errorMessage: 'An error occurred while updating the bank.'
+            });
+        }
+    });
+    
+    router.post('/banks/delete/:code',ensureAdmin, async (req, res) => {
+        const bankCode = req.params.code;
+    
+        try {
+            // Update the 'supprime' field of the bank with the given code
+            await pool.query('UPDATE bank SET supprime = true WHERE code = $1', [bankCode]);
+    
+            // Redirect back to the view banks page
+            res.redirect('/banks');
+        } catch (error) {
+            console.error('Error deleting bank:', error);
+            res.status(500).send('Server Error');
+        }
+    });
+    
+    router.get('/accounts',ensureAdmin, async (req, res) => {
+        try {
+            // Fetch all accounts with the bank name
+            const result = await pool.query(`
+                SELECT a.num, b.name as bankName
+                FROM account a
+                JOIN bank b ON a.bankCode = b.code
+                WHERE a.supprime = false
+            `);
+            const accounts = result.rows;
+            console.log(accounts);
+            // Render the accounts page with the list of accounts
+            res.render('accounts', { accounts });
+        } catch (err) {
+            console.error(err.message);
+            res.status(500).send('Server Error');
+        }
+    });
 
 router.get('/add-account',ensureAdmin, async (req, res) => {
     try {
@@ -202,26 +296,35 @@ router.get('/add-account',ensureAdmin, async (req, res) => {
         const banks = result.rows;
 
         // Render the add-account page with the list of banks
-        res.render('add-account', { banks });
+        res.render('add-account', { banks , error_msg: req.flash('error_msg')});
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
     }
 });
 
+router.post('/add-account', ensureAdmin, async (req, res) => {
+    const { bankCode, accountNum } = req.body;
 
-router.post('/add-account',ensureAdmin, async (req, res) => {
-    const { bankCode } = req.body;
+    // Check if the account number is exactly 11 digits long
+    const accountNumRegex = /^\d{11}$/;
+    if (!accountNumRegex.test(accountNum)) {
+        req.flash('error_msg', 'Account number must be exactly 11 digits long.');
+        return res.redirect('/add-account'); // Redirect back to the form with an error message
+    }
+
     try {
-        // Determine the new account number
-        const result = await pool.query('SELECT num FROM account ORDER BY num DESC LIMIT 1');
-        const lastAccountNumber = result.rows[0] ? parseInt(result.rows[0].num, 10) : 9999999999;
-        const newAccountNumber = (lastAccountNumber + 1).toString().padStart(11, '0');
+        // Check if the account number already exists
+        const accountCheckResult = await pool.query('SELECT num FROM account WHERE num = $1', [accountNum]);
+        if (accountCheckResult.rows.length > 0) {
+            req.flash('error_msg', 'Account number already exists.');
+            return res.redirect('/add-account');
+        }
 
-        // Insert the new account with the generated number
+        // Insert the new account into the database
         await pool.query(
             'INSERT INTO account (num, bankCode) VALUES ($1, $2)',
-            [newAccountNumber, bankCode]
+            [accountNum, bankCode]
         );
 
         res.redirect('/accounts');
@@ -230,6 +333,9 @@ router.post('/add-account',ensureAdmin, async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+
+
+
 
 
 
@@ -323,9 +429,8 @@ router.get('/emission', ensureAuthenticated, async (req, res) => {
         `);
 
         // Check if req.user exists and log its contents
-        console.log('User:', req.user);
+  
        // console.log(req.user.role);
-        //console.log(checks);
         res.render('emission', { 
             checks,
             userRole: req.user ? req.user.role : 'guest' // Pass the user's role to the template
@@ -498,7 +603,8 @@ router.get('/checks/edit/admin/:num', ensureAdmin, ensureCheckNotIssued, async (
         console.error('Error fetching check details:', error);
         res.status(500).render('500', { message: 'Internal Server Error' });
     }
-});
+}); 
+
 
 // Route for updating a check by an admin
 router.post('/checks/update/admin/:num', ensureAdmin, async (req, res) => {
@@ -727,10 +833,10 @@ router.post('/checks/delete/:num',ensureCheckNotIssued , async (req, res) => {
   
   router.get('/search-results', async (req, res) => {
   
-    const { creationDate, valueDate, entryDate, issueDate, type } = req.query;
+    const { creationDate, valueDate, entryDate, issueDate, type ,status } = req.query;
     
     try {
-      const filteredChecks = await getFilteredChecks({ creationDate, valueDate, entryDate, issueDate, type });
+      const filteredChecks = await getFilteredChecks({ creationDate, valueDate, entryDate, issueDate, type,status});
       res.render('search-results', {
         filteredChecks,
         query: req.query,

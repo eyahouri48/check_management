@@ -28,7 +28,11 @@
       <form action="/banks/add" method="POST">
         <div class="form-group">
           <label for="name">Bank Name</label>
-          <input type="text" class="form-control" id="name" name="name" required pattern="^[A-Za-z\s]+$" >
+          <input type="text" class="form-control" id="name" name="name" required pattern="^[A-Za-z\s]+$">
+        </div>
+        <div class="form-group">
+          <label for="code">Bank Code</label>
+          <input type="text" class="form-control" id="code" name="code"  placeholder="bank code" >
         </div>
         <button type="submit" class="btn btn-primary">Add Bank</button>
       </form>
@@ -45,4 +49,5 @@
 
 <!-- Logout Modal-->
 <%- include("./partials/logoutModel.ejs"); %>
+
 
