@@ -442,6 +442,7 @@ router.get('/accounts-by-bank', async (req, res) => {
 }); */
 
 router.get('/emission', ensureAuthenticated, async (req, res) => {
+    console.log(req.user.role);
     try {
         const { rows: checks } = await pool.query(`
             SELECT c.num, c.amount, c.beneficiary, c.creationDate, c.valueDate, c.entryDate, c.issueDate, c.type, 
@@ -494,7 +495,7 @@ router.get('/add-check', ensureAgentOrAdmin, async (req, res) => {
     }
 }); */
 
-router.post('/add-check', ensureAgentOrAdmin, async (req, res) => {
+/* router.post('/add-check', ensureAgentOrAdmin, async (req, res) => {
     const { amount, beneficiary, valueDate, bankCode, accountNum, type } = req.body;
 
     try {
@@ -522,7 +523,40 @@ router.post('/add-check', ensureAgentOrAdmin, async (req, res) => {
         console.error(err);
         res.status(500).send('Server Error');
     }
+}); */
+router.post('/add-check', ensureAgentOrAdmin, async (req, res) => {
+    const { amount, beneficiary, valueDate, bankCode, accountNum, type } = req.body;
+
+    try {
+        // Check if the amount is provided and valid
+        if (!amount || amount <= 0) {
+            return res.status(400).send('Amount is required and must be greater than zero.');
+        }
+
+        const year = new Date().getFullYear();
+        const { rows } = await pool.query('SELECT MAX(num) AS maxnum FROM cheque');
+        
+        // Calculate the next check number
+        let nextNum = rows[0].maxnum ? parseInt(String(rows[0].maxnum).slice(4)) + 1 : 1;
+        const formattedNum = `${year}${nextNum.toString().padStart(6, '0')}`;
+
+        // Set valueDate to null if it's not provided
+        const dateValue = valueDate ? valueDate : null;
+
+        // Insert the new check into the database
+        await pool.query(
+            `INSERT INTO cheque (num, amount, beneficiary, valueDate, bankCode, accountNum, type, createdBy) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [formattedNum, amount, beneficiary, dateValue, bankCode, accountNum, type, req.user.fullname]
+        );
+
+        res.redirect('/emission');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
 });
+
 
 
 
@@ -882,7 +916,7 @@ router.post('/checks/update/agent/:num', ensureAgent, async (req, res) => {
       }
   
   }); */
-  router.post('/checks/update/cashier/:num', ensureCashier, async (req, res) => {
+ /*  router.post('/checks/update/cashier/:num', ensureCashier, async (req, res) => {
     const checkNum = parseInt(req.params.num, 10);
     const { entryDate, issueDate, type } = req.body;
     const updatedBy = req.user ? req.user.fullname : undefined;
@@ -907,11 +941,45 @@ router.post('/checks/update/agent/:num', ensureAgent, async (req, res) => {
         console.error(error);
         res.status(500).send('Server error');
     }
+}); */
+router.post('/checks/update/cashier/:num', ensureCashier, async (req, res) => {
+    const checkNum = parseInt(req.params.num, 10);
+    const { entryDate, issueDate, type } = req.body;
+    const updatedBy = req.user ? req.user.fullname : undefined;
+
+    try {
+        await pool.query(`
+            UPDATE cheque
+            SET 
+                entryDate = $1::date,
+                issueDate = $2::date,
+                type = $3,
+                updatedBy = $4,
+                lastUpdatedBy = CASE 
+                    WHEN $2 IS NOT NULL THEN $5 
+                    ELSE lastUpdatedBy 
+                END
+            WHERE num = $6
+        `, [
+            entryDate || null,     // Set to null if not provided
+            issueDate || null,     // Set to null if not provided
+            type || null,          // Set to null if not provided
+            updatedBy,
+            req.user.fullname,
+            checkNum
+        ]);
+
+        res.redirect('/emission');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Server error');
+    }
 });
 
 
 
-router.post('/checks/delete/:num',ensureCheckNotIssued , async (req, res) => {
+
+router.post('/checks/delete/:num',ensureCheckNotIssued , ensureAgentOrAdmin, async (req, res) => {
     const { num } = req.params;
   
     try {

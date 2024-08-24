@@ -71,23 +71,27 @@
                 <div class="mr-5">Last Updated By: <%= check.lastupdatedby || 'None' %></div> <!-- Add this line -->
               </div>
 
-              <% if (!check.issueDate) { %>
+              <% if (!check.issuedate || isNaN(new Date(check.issuedate).getTime())) { %>
                 <a class="card-footer text-white clearfix small z-1" href="<%= userRole === 'admin' ? '/checks/edit/admin/' + check.num : userRole === 'agent' ? '/checks/edit/agent/' + check.num : userRole === 'cashier' ? '/checks/edit/cashier/' + check.num : '#' %>">
                   <span class="float-left">Edit</span>
                   <span class="float-right">
                     <i class="fas fa-angle-right"></i>
                   </span>
                 </a>
-                <a class="card-footer text-white clearfix small z-1" href="#"
-                  onclick="event.preventDefault(); document.getElementById('delete-check-form-<%= check.num %>').submit();">
-                  <span class="float-left">Delete</span>
-                  <span class="float-right">
-                    <i class="fas fa-angle-right"></i>
-                  </span>
-                </a>
-                <form id="delete-check-form-<%= check.num %>" action="/checks/delete/<%= check.num %>" method="POST" style="display: none;">
-                  <input type="hidden" name="_method" value="DELETE">
-                </form>
+                
+                <% if (userRole !== 'cashier') { %>
+                  <a class="card-footer text-white clearfix small z-1" href="#"
+                    onclick="event.preventDefault(); document.getElementById('delete-check-form-<%= check.num %>').submit();">
+                    <span class="float-left">Delete</span>
+                    <span class="float-right">
+                      <i class="fas fa-angle-right"></i>
+                    </span>
+                  </a>
+                  <form id="delete-check-form-<%= check.num %>" action="/checks/delete/<%= check.num %>" method="POST" style="display: none;">
+                    <input type="hidden" name="_method" value="DELETE">
+                  </form>
+                <% } %>
+                
               <% } %>
             </div>
           </div>
@@ -103,5 +107,6 @@
 
 <!-- Logout Modal-->
 <%- include("./partials/logoutModel.ejs"); %>
+
 
 
