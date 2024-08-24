@@ -21,7 +21,54 @@
         <div class="card-body">
           <form action="/search-results" method="GET">
             <div class="row">
-              <!-- form fields here -->
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="creationDate">Creation Date</label>
+                  <input type="date" id="creationDate" name="creationDate" class="form-control">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="valueDate">Value Date</label>
+                  <input type="date" id="valueDate" name="valueDate" class="form-control">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="entryDate">Entry Date</label>
+                  <input type="date" id="entryDate" name="entryDate" class="form-control">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="issueDate">Issue Date</label>
+                  <input type="date" id="issueDate" name="issueDate" class="form-control">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="type">Type</label>
+                  <select id="type" name="type" class="form-control">
+                    <option value="">-- Select Type --</option>
+                    <option value="P">Personnel</option>
+                    <option value="S">Stagiaire</option>
+                    <option value="F">Fournisseur</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="status">Status</label>
+                  <select id="status" name="status" class="form-control">
+                    <option value="">-- Select Status --</option>
+                    <option value="issued">Issued</option>
+                    <option value="notIssued">Not Issued</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">Search</button>
+              </div>
             </div>
           </form>
         </div>
