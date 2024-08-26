@@ -15,55 +15,45 @@
       </ol>
 
       <!-- Page Content -->
-      <div class="row mb-4">
-        <!-- Add a New Account Card -->
-        <div class="col-xl-3 col-sm-6 mb-3">
-          <a class="card text-white bg-success o-hidden h-100" href="/add-account">
-            <div class="card-body">
-              <div class="card-body-icon">
-                <i class="fas fa-plus"></i>
-              </div>
-              <div class="mr-5">Add a New Account</div>
-            </div>
-            <div class="card-footer text-white clearfix small z-1">
-              <span class="float-left">Click to add</span>
-              <span class="float-right">
-                <i class="fas fa-angle-right"></i>
-              </span>
-            </div>
+      <div class="mb-4">
+        <div class="text-right mb-3">
+          <a class="btn btn-success" href="/add-account">
+            <i class="fas fa-plus"></i> Add a New Account
           </a>
         </div>
-
-        <% accounts.forEach(account => { %>
-        <div class="col-xl-3 col-sm-6 mb-3">
-          <div class="card text-white bg-primary o-hidden h-100">
-            <div class="card-body">
-              <div class="card-body-icon">
-                <i class="fas fa-fw fa-briefcase"></i>
-              </div>
-              <div class="mr-5">Account Number : <%= account.num %></div>
-              <div class="mr-5">Bank Name : <%= account.bankname %></div>
-            </div>
-            <a class="card-footer text-white clearfix small z-1" href="/accounts/edit/<%= account.num %>">
-              <span class="float-left">Edit</span>
-              <span class="float-right">
-                <i class="fas fa-angle-right"></i>
-              </span>
-            </a>
-            <!-- Replace the Delete link with a form -->
-            <a class="card-footer text-white clearfix small z-1" href="#" onclick="event.preventDefault(); document.getElementById('delete-account-form-<%= account.num %>').submit();">
-              <span class="float-left">Delete</span>
-              <span class="float-right">
-                <i class="fas fa-angle-right"></i>
-              </span>
-            </a>
-            <!-- Hidden form for deleting the account -->
-            <form id="delete-account-form-<%= account.num %>" action="/accounts/delete/<%= account.num %>" method="POST" style="display: none;">
-              <input type="hidden" name="_method" value="DELETE">
-            </form>
-          </div>
+        <div class="table-responsive">
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Account Number</th>
+                <th>Bank Name</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% accounts.forEach(account => { %>
+              <tr>
+                <td><%= account.num %></td>
+                <td><%= account.bankname %></td>
+                <td class="text-center">
+                  <!-- Edit icon -->
+                  <a href="/accounts/edit/<%= account.num %>" class="text-primary mr-3">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <!-- Delete icon -->
+                  <a href="#" class="text-danger" onclick="event.preventDefault(); document.getElementById('delete-account-form-<%= account.num %>').submit();">
+                    <i class="fas fa-trash"></i>
+                  </a>
+                  <!-- Hidden form for deleting the account -->
+                  <form id="delete-account-form-<%= account.num %>" action="/accounts/delete/<%= account.num %>" method="POST" style="display: none;">
+                    <input type="hidden" name="_method" value="DELETE">
+                  </form>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
         </div>
-        <% }) %>
       </div>
 
     </div>
@@ -77,6 +67,12 @@
 <!-- /#wrapper -->
 <!-- Logout Modal-->
 <%- include("./partials/logoutModel.ejs"); %>
+
+
+
+
+
+
 
 
 

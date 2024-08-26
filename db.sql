@@ -38,9 +38,9 @@ CREATE TABLE cheque (
     bankCode INT NOT NULL,
     accountNum INT,
     createdBy VARCHAR(50),         
-    updatedBy VARCHAR(50),        
+    updatedBy VARCHAR(50),  
+    lastupdatedby VARCHAR(50),      
     FOREIGN KEY (accountNum) REFERENCES Account(num),
     supprime BOOLEAN DEFAULT FALSE
 );
 
-insert into users (idUser,username,password,fullName,function,idRole,supprime) values (1,'eya','eya','tfytfyf','agent',2,false);

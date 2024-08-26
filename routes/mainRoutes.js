@@ -12,6 +12,14 @@ import pkg from 'pg';
 const { Pool } = pkg;
 
 const router = express.Router();
+router.use((req, res, next) => {
+    if (req.user) {
+        console.log('User with role:', req.user.role);
+    } else {
+        console.log('No user authenticated');
+    }
+    next();
+});
 
 const pool = new Pool({
     user: 'postgres',
@@ -50,28 +58,28 @@ export default function(passport) {
     };
     router.get('/', ensureAuthenticated, (req, res) => {
         //console.log(req.user.iduser);
-        res.render('dashboard');
+        res.render('dashboard',{req});
     });
 
     router.get('/dashboard', ensureAuthenticated, (req, res) => {
 
-        res.render('dashboard');
+        res.render('dashboard',{req});
     });
 
 
     router.get('/404', (req, res) => {
        
-        res.render('404');
+        res.render('404',{req});
     });
 
     router.get('/charts', ensureAuthenticated, (req, res) => {
-        const userRole = req.user.function ? req.user.function : 'Undefined'; // Adjust this according to how you store the role
-        res.render('charts',{userRole});
+       
+        res.render('charts',{req});
     });
 
     router.get('/tables', ensureAuthenticated, (req, res) => {
-        const userRole = req.user.function ? req.user.function : 'Undefined'; // Adjust this according to how you store the role
-        res.render('tables',{userRole});
+    
+        res.render('tables',{req});
     });
 
     router.get('/login', (req, res) => {
@@ -79,13 +87,16 @@ export default function(passport) {
         res.render('login', { message });
     });
 
+
+
+
     router.get('/banks', ensureAuthenticated,ensureAdmin,  async (req, res) => {
   
         try {
 
             const result = await pool.query('SELECT code, name FROM bank WHERE supprime = false');
             const banks = result.rows;
-            res.render('banks', { banks});
+            res.render('banks', { banks, req});
         } catch (err) {
             console.error(err);
             res.status(500).send("Error retrieving banks from database.");
@@ -93,8 +104,8 @@ export default function(passport) {
     });
     
     router.get('/add/bank',ensureAdmin, (req, res) => {
-     
-        res.render('add-bank');
+        console.log(req.user);
+        res.render('add-bank',{req});
     });
     
 
@@ -140,7 +151,7 @@ export default function(passport) {
             }
     
             // Check if the bank name or code already exists
-            const nameQuery = 'SELECT * FROM bank WHERE name = $1';
+            const nameQuery = 'SELECT * FROM bank WHERE LOWER(name) = LOWER($1)';
             const codeQuery = 'SELECT * FROM bank WHERE code = $1';
     
             const nameResult = await pool.query(nameQuery, [name]);
@@ -148,12 +159,12 @@ export default function(passport) {
     
             if (nameResult.rows.length > 0) {
                 // Bank name already exists
-                return res.render('add-bank', { errorMessage: 'Bank name already exists.' });
+                return res.render('add-bank',  { req , errorMessage: 'Bank name already exists.' });
             }
     
             if (codeResult.rows.length > 0) {
                 // Bank code already exists
-                return res.render('add-bank', { errorMessage: 'Bank code already exists.' });
+                return res.render('add-bank', {req, errorMessage: 'Bank code already exists.' });
             }
     
             // Insert new bank if no duplicates are found
@@ -164,7 +175,7 @@ export default function(passport) {
             res.redirect('/banks');
         } catch (error) {
             console.error('Error adding bank:', error);
-            res.render('add-bank', { errorMessage: 'An error occurred while adding the bank.' });
+            res.render('add-bank', { req, errorMessage: 'An error occurred while adding the bank.' });
         }
     });
     
@@ -181,40 +192,7 @@ export default function(passport) {
         try {
             const result = await pool.query('SELECT * FROM bank WHERE code = $1', [bankCode]);
             const bank = result.rows[0];
-            res.render('edit-bank', { bank });
-        } catch (err) {
-            console.error(err.message);
-            res.status(500).send('Server Error');
-        }
-    });
-    
-
-    router.post('/banks/edit/:code', ensureAdmin, async (req, res) => {
-        const bankCode = req.params.code;
-        const { name } = req.body;
-    
-        try {
-            // Check if the bank name already exists (case-insensitive)
-            const existingBank = await pool.query(
-                'SELECT * FROM bank WHERE LOWER(name) = LOWER($1) AND code != $2',
-                [name, bankCode]
-            );
-    
-            if (existingBank.rows.length > 0) {
-                // Bank name already exists, render the edit-bank page with an error message
-                return res.render('edit-bank', {
-                    bank: { code: bankCode, name: name },
-                    errorMessage: 'Bank name already exists. Please choose a different name.'
-                });
-            }
-    
-            // If no conflict, proceed with the update
-            await pool.query(
-                'UPDATE bank SET name = $1 WHERE code = $2',
-                [name, bankCode]
-            );
-    
-            res.redirect('/banks');
+            res.render('edit-bank', { bank ,req });
         } catch (err) {
             console.error(err.message);
             res.status(500).send('Server Error');
@@ -236,7 +214,8 @@ export default function(passport) {
             if (nameExistsResult.rows.length > 0) {
                 // Bank name already exists
                 return res.render('edit-bank', {
-                    bank: { code: bankCode, name },
+                    bank: { code: bankCode, name},
+                    req,
                     errorMessage: 'Bank name already exists. Please choose a different name.'
                 });
             }
@@ -250,6 +229,7 @@ export default function(passport) {
             console.error('Error updating bank:', err.message);
             res.render('edit-bank', {
                 bank: { code: bankCode, name },
+                req,
                 errorMessage: 'An error occurred while updating the bank.'
             });
         }
@@ -282,7 +262,7 @@ export default function(passport) {
             const accounts = result.rows;
             console.log(accounts);
             // Render the accounts page with the list of accounts
-            res.render('accounts', { accounts });
+            res.render('accounts', { accounts ,req });
         } catch (err) {
             console.error(err.message);
             res.status(500).send('Server Error');
@@ -296,7 +276,7 @@ router.get('/add-account',ensureAdmin, async (req, res) => {
         const banks = result.rows;
 
         // Render the add-account page with the list of banks
-        res.render('add-account', { banks , error_msg: req.flash('error_msg')});
+        res.render('add-account', { banks ,req , error_msg: req.flash('error_msg')});
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
@@ -358,7 +338,7 @@ router.get('/accounts/edit/:num',ensureAdmin, async (req, res) => {
         const banksQuery = 'SELECT * FROM bank WHERE supprime = false';
         const banksResult = await pool.query(banksQuery);
 
-        res.render('edit-account', { account, banks: banksResult.rows });
+        res.render('edit-account', { account, req, banks: banksResult.rows });
     } catch (error) {
         console.error('Error fetching account:', error);
         res.status(500).send('Server Error');
@@ -442,7 +422,7 @@ router.get('/accounts-by-bank', async (req, res) => {
 }); */
 
 router.get('/emission', ensureAuthenticated, async (req, res) => {
-    console.log(req.user.role);
+  console.log(req.user.role);
     try {
         const { rows: checks } = await pool.query(`
             SELECT c.num, c.amount, c.beneficiary, c.creationDate, c.valueDate, c.entryDate, c.issueDate, c.type, 
@@ -454,7 +434,8 @@ router.get('/emission', ensureAuthenticated, async (req, res) => {
 
         res.render('emission', { 
             checks,
-            userRole: req.user ? req.user.role : 'guest' // Pass the user's role to the template
+            req
+            //userRole: req.user ? req.user.role : 'guest' // Pass the user's role to the template
         });
     } catch (err) {
         console.error(err);
@@ -466,21 +447,59 @@ router.get('/emission', ensureAuthenticated, async (req, res) => {
 
 
 
-
-
-router.get('/add-check', ensureAgentOrAdmin, async (req, res) => {
+ router.get('/add-check', ensureAgentOrAdmin, async (req, res) => {
     try {
         // Fetch all bank codes and names from the Bank table
         const bankResult = await pool.query('SELECT code, name FROM bank WHERE supprime = false');
         const banks = bankResult.rows;
 
         // Render the add-check page with the list of banks
-        res.render('add-check', { banks });
+        res.render('add-check', { banks,req });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
     }
+}); 
+router.post('/add-check', ensureAgentOrAdmin, async (req, res) => {
+    const { amount, beneficiary, valueDate, bankCode, accountNum, type } = req.body;
+
+    try {
+        // Check if the amount is provided and valid
+        if (!amount || amount <= 0) {
+            // Fetch the banks again to pass them back to the form
+            const bankResult = await pool.query('SELECT code, name FROM bank WHERE supprime = false');
+            const banks = bankResult.rows;
+
+            return res.render('add-check', {
+                banks, // Pass the banks array to the view again
+                errorMessage: 'Amount is required and must be greater than zero.',
+                req
+            });
+        }
+
+        const year = new Date().getFullYear();
+        const { rows } = await pool.query('SELECT MAX(num) AS maxnum FROM cheque');
+        
+        // Convert maxnum to string and handle the case where it might be null
+        let nextNum = rows[0].maxnum ? parseInt(String(rows[0].maxnum).slice(4)) + 1 : 1;
+        const formattedNum = `${year}${nextNum.toString().padStart(6, '0')}`;
+
+        // Set valueDate to null if it's not provided
+        const dateValue = valueDate ? valueDate : null;
+        // Insert the new check into the database
+        await pool.query(
+            `INSERT INTO cheque (num, amount, beneficiary, valueDate, bankCode, accountNum, type, createdBy) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [formattedNum, amount, beneficiary, dateValue, bankCode, accountNum, type, req.user.fullname]
+        );
+
+        res.redirect('/emission');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
 });
+
 /* router.get('/add-check-admin',ensureAuthenticated, ensureAdmin, async (req, res) => {
     try {
         // Fetch all bank codes and names from the Bank table
@@ -495,14 +514,17 @@ router.get('/add-check', ensureAgentOrAdmin, async (req, res) => {
     }
 }); */
 
-/* router.post('/add-check', ensureAgentOrAdmin, async (req, res) => {
+/*** router.post('/add-check', ensureAgentOrAdmin, async (req, res) => {
     const { amount, beneficiary, valueDate, bankCode, accountNum, type } = req.body;
 
     try {
         // Check if the amount is provided
         if (!amount || amount <= 0) {
-            return res.status(400).send('Amount is required and must be greater than zero.');
+            return res.render('add-check', {
+                errorMessage: 'Amount is required and must be greater than zero.'
+            });
         }
+        
 
         const year = new Date().getFullYear();
         const { rows } = await pool.query('SELECT MAX(num) AS maxnum FROM cheque');
@@ -523,8 +545,8 @@ router.get('/add-check', ensureAgentOrAdmin, async (req, res) => {
         console.error(err);
         res.status(500).send('Server Error');
     }
-}); */
-router.post('/add-check', ensureAgentOrAdmin, async (req, res) => {
+}); ***/
+/* router.post('/add-check', ensureAgentOrAdmin, async (req, res) => {
     const { amount, beneficiary, valueDate, bankCode, accountNum, type } = req.body;
 
     try {
@@ -555,7 +577,9 @@ router.post('/add-check', ensureAgentOrAdmin, async (req, res) => {
         console.error(err);
         res.status(500).send('Server Error');
     }
-});
+}); */
+
+
 
 
 
@@ -653,6 +677,7 @@ router.get('/checks/edit/admin/:num', ensureAdmin, ensureCheckNotIssued, async (
             check,
             banks,
             accounts,
+            req,
             user: req.user
         });
     } catch (error) {
@@ -997,11 +1022,13 @@ router.post('/checks/delete/:num',ensureCheckNotIssued , ensureAgentOrAdmin, asy
   router.get('/search-results', async (req, res) => {
   
     const { creationDate, valueDate, entryDate, issueDate, type ,status } = req.query;
+    console.log('Status:', status);
     
     try {
       const filteredChecks = await getFilteredChecks({ creationDate, valueDate, entryDate, issueDate, type,status});
       res.render('search-results', {
         filteredChecks,
+        req,
         query: req.query,
        
       });
@@ -1012,10 +1039,10 @@ router.post('/checks/delete/:num',ensureCheckNotIssued , ensureAgentOrAdmin, asy
 });
 
 router.get('/download-pdf', async (req, res) => {
-    const { creationDate, valueDate, entryDate, issueDate, type } = req.query;
+    const { creationDate, valueDate, entryDate, issueDate, type, status } = req.query;
 
     try {
-        const filteredChecks = await getFilteredChecks({ creationDate, valueDate, entryDate, issueDate, type });
+        const filteredChecks = await getFilteredChecks({ creationDate, valueDate, entryDate, issueDate, type, status });
         const doc = new PDFDocument({ margin: 30 });
         let filename = 'filtered-checks.pdf';
         filename = encodeURIComponent(filename);
@@ -1029,8 +1056,8 @@ router.get('/download-pdf', async (req, res) => {
 
         // Table Headers
         const tableTop = 120;
-        const tableHeaders = ['Account Number', 'Amount', 'Beneficiary', 'Type'];
-        const columnWidths = [150, 100, 150, 80];
+        const tableHeaders = ['Account Number', 'Amount', 'Beneficiary', 'Type', 'Status'];
+        const columnWidths = [120, 100, 150, 80, 100];
         
         doc.fontSize(12).font('Helvetica-Bold');
         tableHeaders.forEach((header, i) => {
@@ -1056,7 +1083,8 @@ router.get('/download-pdf', async (req, res) => {
                 check.accountnum ? check.accountnum.toString() : 'N/A',
                 check.amount ? check.amount.toString() : 'N/A',
                 check.beneficiary ? check.beneficiary.toString() : 'N/A',
-                check.type ? check.type.toString() : 'N/A'
+                check.type ? check.type.toString() : 'N/A',
+                check.status ? check.status.toString() : 'N/A'  // Add status to the row
             ];
 
             rowValues.forEach((value, i) => {
@@ -1075,6 +1103,7 @@ router.get('/download-pdf', async (req, res) => {
         res.status(500).send('There was an error generating the PDF.');
     }
 });
+
 
 
  

@@ -33,6 +33,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressLayouts);// to not repeat ourselves and to wrap all the pages by the html of main.ejs layout
+ 
+
 app.set('layout','./layout/main');
 
 app.set('view engine', 'ejs');
@@ -76,13 +78,26 @@ passport.serializeUser((user, done) => {
 // Deserialize user from the session
 passport.deserializeUser(async (iduser, done) => {
     try {
-        const result = await pool.query('SELECT * FROM users WHERE iduser = $1', [iduser]);
+        const result = await pool.query(`
+            SELECT u.*, r.name AS role
+            FROM users u 
+            LEFT JOIN role r ON u.idRole = r.id 
+            WHERE u.iduser = $1
+        `, [iduser]);
+
         const user = result.rows[0];
+
+        if (user) {
+            console.log('User role:', user.role); // Log the user's role
+        }
+
         done(null, user);
     } catch (err) {
         done(err, null);
     }
 });
+
+
 
 // Use the routes, passing passport as an argument
 app.use('/', mainRoutes(passport)); // Pass passport to mainRoutes

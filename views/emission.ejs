@@ -10,142 +10,143 @@
         <li class="breadcrumb-item">
           <a href="/">Dashboard</a>
         </li>
-        <li class="breadcrumb-item active">Emission</li>
+        <li class="breadcrumb-item active">Checks</li>
       </ol>
-
-      <!-- Search Filter Form -->
-      <div class="card mb-4">
-        <div class="card-header">
-          <i class="fas fa-search"></i> Filter Checks
-        </div>
-        <div class="card-body">
-          <form action="/search-results" method="GET">
-            <div class="row">
-              <div class="col-md-4">
-                <div class="form-group">
-                  <label for="creationDate">Creation Date</label>
-                  <input type="date" id="creationDate" name="creationDate" class="form-control">
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="form-group">
-                  <label for="valueDate">Value Date</label>
-                  <input type="date" id="valueDate" name="valueDate" class="form-control">
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="form-group">
-                  <label for="entryDate">Entry Date</label>
-                  <input type="date" id="entryDate" name="entryDate" class="form-control">
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="form-group">
-                  <label for="issueDate">Issue Date</label>
-                  <input type="date" id="issueDate" name="issueDate" class="form-control">
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="form-group">
-                  <label for="type">Type</label>
-                  <select id="type" name="type" class="form-control">
-                    <option value="">-- Select Type --</option>
-                    <option value="P">Personnel</option>
-                    <option value="S">Stagiaire</option>
-                    <option value="F">Fournisseur</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="form-group">
-                  <label for="status">Status</label>
-                  <select id="status" name="status" class="form-control">
-                    <option value="">-- Select Status --</option>
-                    <option value="issued">Issued</option>
-                    <option value="notIssued">Not Issued</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-md-4 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary">Search</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Page Content -->
-      <div class="row mb-4">
-        <div class="col-xl-3 col-sm-6 mb-3">
-          <a class="card text-white bg-success o-hidden h-100" href="/add-check">
-            <div class="card-body">
-              <div class="card-body-icon">
-                <i class="fas fa-plus"></i>
-              </div>
-              <div class="mr-5">Add a New Check</div>
-            </div>
-            <div class="card-footer text-white clearfix small z-1">
-              <span class="float-left">Click to add</span>
-              <span class="float-right">
-                <i class="fas fa-angle-right"></i>
-              </span>
-            </div>
-          </a>
-        </div>
-      </div>
-
+ <!-- Search Filter Form -->
+ <div class="card mb-4">
+  <div class="card-header">
+    <i class="fas fa-search"></i> Filter Checks
+  </div>
+  <div class="card-body">
+    <form action="/search-results" method="GET">
       <div class="row">
-        <% checks.forEach(check => { %>
-          <div class="col-xl-3 col-sm-6 mb-3">
-            <div class="card text-white bg-primary o-hidden h-100">
-              <div class="card-body">
-                <div class="card-body-icon">
-                  <i class="fas fa-fw fa-money-check"></i>
-                </div>
-                <div class="mr-5">Check Number: <%= check.num %></div>
-                <div class="mr-5">Amount: <%= check.amount || '0' %></div>
-                <div class="mr-5">Beneficiary: <%= check.beneficiary || 'None' %></div>
-                <div class="mr-5">Creation Date: <%= check.creationdate ? new Date(check.creationdate).toLocaleDateString() : 'None' %></div>
-                <div class="mr-5">Value Date: <%= check.valuedate ? new Date(check.valuedate).toLocaleDateString() : 'None' %></div>
-                <div class="mr-5">Entry Date: <%= check.entrydate ? new Date(check.entrydate).toLocaleDateString() : 'None' %></div>
-                <div class="mr-5">Issue Date: <%= check.issuedate ? new Date(check.issuedate).toLocaleDateString() : 'None' %></div>
-                <div class="mr-5">Type: <%= check.type || 'None' %></div>
-                <div class="mr-5">Bank: <%= check.bankname ? check.bankname : 'Unknown Bank' %></div>
-                <div class="mr-5">Bank Code: <%= check.bankcode %></div>
-                <div class="mr-5">Account Number: <%= check.accountnum || 'None' %></div>
-                <div class="mr-5">Created By: <%= check.createdby || 'None' %></div>
-                <div class="mr-5">Updated By: <%= check.updatedby || 'None' %></div>
-                <div class="mr-5">Last Updated By: <%= check.lastupdatedby || 'None' %></div> <!-- Add this line -->
-              </div>
-
-              <% if (!check.issuedate || isNaN(new Date(check.issuedate).getTime())) { %>
-                <a class="card-footer text-white clearfix small z-1" href="<%= userRole === 'admin' ? '/checks/edit/admin/' + check.num : userRole === 'agent' ? '/checks/edit/agent/' + check.num : userRole === 'cashier' ? '/checks/edit/cashier/' + check.num : '#' %>">
-                  <span class="float-left">Edit</span>
-                  <span class="float-right">
-                    <i class="fas fa-angle-right"></i>
-                  </span>
-                </a>
-                
-                <% if (userRole !== 'cashier') { %>
-                  <a class="card-footer text-white clearfix small z-1" href="#"
-                    onclick="event.preventDefault(); document.getElementById('delete-check-form-<%= check.num %>').submit();">
-                    <span class="float-left">Delete</span>
-                    <span class="float-right">
-                      <i class="fas fa-angle-right"></i>
-                    </span>
-                  </a>
-                  <form id="delete-check-form-<%= check.num %>" action="/checks/delete/<%= check.num %>" method="POST" style="display: none;">
-                    <input type="hidden" name="_method" value="DELETE">
-                  </form>
-                <% } %>
-                
-              <% } %>
-            </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="creationDate">Creation Date</label>
+            <input type="date" id="creationDate" name="creationDate" class="form-control">
           </div>
-        <% }); %>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="valueDate">Value Date</label>
+            <input type="date" id="valueDate" name="valueDate" class="form-control">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="entryDate">Entry Date</label>
+            <input type="date" id="entryDate" name="entryDate" class="form-control">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="issueDate">Issue Date</label>
+            <input type="date" id="issueDate" name="issueDate" class="form-control">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="type">Type</label>
+            <select id="type" name="type" class="form-control">
+              <option value="">-- Select Type --</option>
+              <option value="P">Personnel</option>
+              <option value="S">Stagiaire</option>
+              <option value="F">Fournisseur</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" name="status" class="form-control">
+              <option value="">-- Select Status --</option>
+              <option value="issued">Issued</option>
+              <option value="notIssued">Not Issued</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary">Search</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+      <!-- Page Content -->
+      <div class="mb-4">
+        <% if (req.user.role !== 'cashier') { %>
+          <div class="text-right mb-3">
+            <a class="btn btn-success" href="/add-check">
+              <i class="fas fa-plus"></i> Add a New Check
+            </a>
+          </div>
+        <% } %>
+        <div class="table-responsive">
+          <table class="table table-bordered table-sm">
+            <thead>
+              <tr>
+                <th style="width: 80px;">Check Number</th>
+                <th style="width: 80px;">Amount</th>
+                <th style="width: 120px;">Beneficiary</th>
+                <th style="width: 100px;">Creation Date</th>
+                <th style="width: 100px;">Value Date</th>
+                <th style="width: 100px;">Entry Date</th>
+                <th style="width: 100px;">Issue Date</th>
+                <th style="width: 80px;">Type</th>
+                <th style="width: 150px;">Bank</th>
+                <th style="width: 100px;">Bank Code</th>
+                <th style="width: 120px;">Account Number</th>
+                <th style="width: 100px;">Created By</th>
+                <th style="width: 100px;">Updated By</th>
+                <th style="width: 100px;">Last Updated By</th>
+                <th style="width: 80px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% checks.forEach(check => { %>
+              <tr>
+                <td><%= check.num %></td>
+                <td><%= check.amount || '0' %></td>
+                <td><%= check.beneficiary || 'None' %></td>
+                <td><%= check.creationdate ? new Date(check.creationdate).toLocaleDateString() : 'None' %></td>
+                <td><%= check.valuedate ? new Date(check.valuedate).toLocaleDateString() : 'None' %></td>
+                <td><%= check.entrydate ? new Date(check.entrydate).toLocaleDateString() : 'None' %></td>
+                <td><%= check.issuedate ? new Date(check.issuedate).toLocaleDateString() : 'None' %></td>
+                <td><%= check.type || 'None' %></td>
+                <td><%= check.bankname ? check.bankname : 'Unknown Bank' %></td>
+                <td><%= check.bankcode %></td>
+                <td><%= check.accountnum || 'None' %></td>
+                <td><%= check.createdby || 'None' %></td>
+                <td><%= check.updatedby || 'None' %></td>
+                <td><%= check.lastupdatedby || 'None' %></td>
+                <td class="text-center">
+                  <% if (!check.issuedate || isNaN(new Date(check.issuedate).getTime())) { %>
+                    <!-- Edit icon -->
+                    <a href="<%= req.user.role === 'admin' ? '/checks/edit/admin/' + check.num : req.user.role === 'agent' ? '/checks/edit/agent/' + check.num : req.user.role === 'cashier' ? '/checks/edit/cashier/' + check.num : '#' %>" class="text-primary">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    <% if (req.user.role !== 'cashier') { %>
+                      <!-- Delete icon -->
+                      <a href="#" class="text-danger ml-2" onclick="event.preventDefault(); document.getElementById('delete-check-form-<%= check.num %>').submit();">
+                        <i class="fas fa-trash"></i>
+                      </a>
+                      <!-- Hidden form for deleting the check -->
+                      <form id="delete-check-form-<%= check.num %>" action="/checks/delete/<%= check.num %>" method="POST" style="display: none;">
+                        <input type="hidden" name="_method" value="DELETE">
+                      </form>
+                    <% } %>
+                  <% } %>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
     <!-- /.container-fluid -->
+
+    <!-- Sticky Footer -->
     <%- include("./partials/footer.ejs"); %>
   </div>
   <!-- /.content-wrapper -->
@@ -155,5 +156,17 @@
 <!-- Logout Modal-->
 <%- include("./partials/logoutModel.ejs"); %>
 
-
-
+<!-- CSS Styles to ensure table fits -->
+<style>
+  .table-responsive {
+    overflow-x: auto;
+  }
+  .table {
+    font-size: 0.75rem;
+    width: 100%;
+  }
+  .table th, .table td {
+    padding: 0.5rem;
+    white-space: nowrap;
+  }
+</style>

@@ -23,7 +23,15 @@ const pool = new Pool({
  * @returns {Promise<Array>} - A promise that resolves to an array of filtered checks.
  */
 export async function getFilteredChecks(filters) {
-  let query = 'SELECT * FROM cheque WHERE true'; // Start with a base query
+  let query = `
+    SELECT *, 
+      CASE 
+        WHEN issuedate IS NOT NULL THEN 'issued' 
+        ELSE 'notIssued' 
+      END AS status
+    FROM cheque 
+    WHERE true`; // Start with a base query
+  
   const values = [];
   let index = 1;
 
@@ -61,13 +69,10 @@ export async function getFilteredChecks(filters) {
   // Handle the new "Status" filter
   if (filters.status) {
     if (filters.status === 'issued') {
-      // If status is "Issued", check that issuedate is not null
       query += ` AND issuedate IS NOT NULL AND supprime = false`;
     } else if (filters.status === 'notIssued') {
-      // If status is "Not Issued", check that issuedate is null
       query += ` AND issuedate IS NULL AND supprime = false`;
     }
-    // No need to use parameterized queries here since we're checking for NULL conditions
   }
 
   try {
@@ -78,5 +83,3 @@ export async function getFilteredChecks(filters) {
     throw err;
   }
 }
-
-

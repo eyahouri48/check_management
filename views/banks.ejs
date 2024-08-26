@@ -1,77 +1,70 @@
 <!-- Navbar -->
 <%- include("./partials/navbar.ejs"); %>
 
-  <div id="wrapper">
-    <%- include("./partials/sidebar.ejs"); %>
+<div id="wrapper">
+  <%- include("./partials/sidebar.ejs"); %>
 
-    <div id="content-wrapper">
-      <div class="container-fluid">
-        <!-- Breadcrumbs-->
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item">
-            <a href="/">Dashboard</a>
-          </li>
-          <li class="breadcrumb-item active">Banks</li>
-        </ol>
+  <div id="content-wrapper">
+    <div class="container-fluid">
+      <!-- Breadcrumbs-->
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+          <a href="/">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item active">Banks</li>
+      </ol>
 
-        <!-- Page Content -->
-        <div class="row mb-4">
-          <div class="col-xl-3 col-sm-6 mb-3">
-            <a class="card text-white bg-success o-hidden h-100" href="/add/bank">
-              <div class="card-body">
-                <div class="card-body-icon">
-                  <i class="fas fa-plus"></i>
-                </div>
-                <div class="mr-5">Add a New Bank</div>
-              </div>
-              <div class="card-footer text-white clearfix small z-1">
-                <span class="float-left">Click to add</span>
-                <span class="float-right">
-                  <i class="fas fa-angle-right"></i>
-                </span>
-              </div>
-            </a>
-          </div>
-          <% banks.forEach(bank => { %>
-          <div class="col-xl-3 col-sm-6 mb-3">
-            <div class="card text-white bg-primary o-hidden h-100">
-              <div class="card-body">
-                <div class="card-body-icon">
-                  <i class="fas fa-fw fa-university"></i>
-                </div>
-                <div class="mr-5"><%= bank.name %></div>
-              </div>
-              <a class="card-footer text-white clearfix small z-1" href="/banks/edit/<%= bank.code %>">
-                <span class="float-left">Edit</span>
-                <span class="float-right">
-                  <i class="fas fa-angle-right"></i>
-                </span>
-              </a>
-              <!-- Replace the Delete link with a form -->
-              <a class="card-footer text-white clearfix small z-1" href="#" onclick="event.preventDefault(); document.getElementById('delete-bank-form-<%= bank.code %>').submit();">
-                <span class="float-left">Delete</span>
-                <span class="float-right">
-                  <i class="fas fa-angle-right"></i>
-                </span>
-              </a>
-              <!-- Hidden form for deleting the bank -->
-              <form id="delete-bank-form-<%= bank.code %>" action="/banks/delete/<%= bank.code %>" method="POST" style="display: none;">
-                <input type="hidden" name="_method" value="DELETE">
-              </form>
-            </div>
-          </div>
-          <% }) %>
+      <!-- Page Content -->
+      <div class="mb-4">
+        <div class="text-right mb-3">
+          <a class="btn btn-success" href="/add/bank">
+            <i class="fas fa-plus"></i> Add a New Bank
+          </a>
         </div>
-
+        <div class="table-responsive">
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Bank Code</th>
+                <th>Bank Name</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% banks.forEach(bank => { %>
+              <tr>
+                <td><%= bank.code %></td>
+                <td><%= bank.name %></td>
+                <td class="text-center">
+                  <!-- Edit icon -->
+                  <a href="/banks/edit/<%= bank.code %>" class="text-primary">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <!-- Delete form with icon -->
+                  <a href="#" class="text-danger ml-2" onclick="event.preventDefault(); document.getElementById('delete-bank-form-<%= bank.code %>').submit();">
+                    <i class="fas fa-trash"></i>
+                  </a>
+                  <!-- Hidden form for deleting the bank -->
+                  <form id="delete-bank-form-<%= bank.code %>" action="/banks/delete/<%= bank.code %>" method="POST" style="display: none;">
+                    <input type="hidden" name="_method" value="DELETE">
+                  </form>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <!-- /.container-fluid -->
-
-      <!-- Sticky Footer -->
-      <%- include("./partials/footer.ejs"); %>
     </div>
-    <!-- /.content-wrapper -->
+    <!-- /.container-fluid -->
+
+    <!-- Sticky Footer -->
+    <%- include("./partials/footer.ejs"); %>
   </div>
-  <!-- /#wrapper -->
- <!-- Logout Modal-->
- <%- include("./partials/logoutModel.ejs"); %>
+  <!-- /.content-wrapper -->
+</div>
+<!-- /#wrapper -->
+<!-- Logout Modal-->
+<%- include("./partials/logoutModel.ejs"); %>
+
 
