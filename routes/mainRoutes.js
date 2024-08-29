@@ -6,6 +6,7 @@ import ensureAdmin from '../privileges/admin.js';
 import ensureAgent from '../privileges/agent.js';
 import ensureCashier from '../privileges/cashier.js';
 import ensureAdminOrCashier from '../privileges/adminOrCashier.js';
+import { getBanks, getAccountsByBank } from '../utilities/function.js';
 import ensureAgentOrAdmin from '../privileges/adminOrAgent.js';
 import { getFilteredChecks } from '../filter/filter.js'; 
 import pkg from 'pg';
@@ -648,7 +649,7 @@ router.post('/checks/update/:num', async (req, res) => {
         res.status(405).send('Method Not Allowed');
     }
 }); */
-router.get('/checks/edit/admin/:num', ensureAdmin, ensureCheckNotIssued, async (req, res) => {
+/*****router.get('/checks/edit/admin/:num', ensureAdmin, ensureCheckNotIssued, async (req, res) => {
     try {
         const checkNum = req.params.num;
 
@@ -684,7 +685,7 @@ router.get('/checks/edit/admin/:num', ensureAdmin, ensureCheckNotIssued, async (
         console.error('Error fetching check details:', error);
         res.status(500).render('500', { message: 'Internal Server Error' });
     }
-}); 
+}); ****/
 
 
 // Route for updating a check by an admin
@@ -728,10 +729,140 @@ router.get('/checks/edit/admin/:num', ensureAdmin, ensureCheckNotIssued, async (
         res.status(500).render('404', { message: 'Internal Server Error' });
     }
 }); */
+/**** router.post('/checks/update/admin/:num', ensureAdmin, async (req, res) => {
+    const checkNum = req.params.num;
+    const { amount, beneficiary, valueDate, bankCode, accountNum, entryDate, issueDate, type } = req.body;
+    const updatedBy = req.user ? req.user.fullname : undefined;
+
+    // Validation for amount
+    if (!amount || amount <= 0) {
+        const banks = await getBanks();
+        const accounts = await getAccountsByBank(bankCode);
+        return res.render('edit-check-admin', {
+            check: {
+                num: checkNum,
+                amount,
+                beneficiary,
+                valueDate,
+                bankCode,
+                accountNum,
+                entryDate,
+                issueDate,
+                type
+            },
+            banks,
+            accounts,
+            req,
+            user:req.user,
+            errorMessage: 'Amount must be greater than 0'
+        });
+    }
+
+    try {
+        // Update the check details in the database
+        const updateQuery = `
+            UPDATE cheque
+            SET 
+                amount = $1,
+                beneficiary = $2,
+                valueDate = $3::date,
+                bankCode = $4,
+                accountNum = $5,
+                entryDate = $6::date,
+                issueDate = $7::date,
+                type = $8,
+                updatedBy = $9,
+                lastUpdatedBy = CASE 
+                    WHEN $7 IS NOT NULL THEN $10 
+                    ELSE lastUpdatedBy 
+                END
+            WHERE num = $11
+        `;
+        await pool.query(updateQuery, [
+            amount,
+            beneficiary,
+            valueDate || null,
+            bankCode,
+            accountNum,
+            entryDate || null,
+            issueDate || null,
+            type,
+            updatedBy,
+            req.user.fullname,
+            checkNum
+        ]);
+
+        res.redirect('/emission'); // Redirect to the list of checks or another relevant page
+    } catch (error) {
+        console.error('Error updating check:', error);
+        res.status(500).render('404', { message: 'Internal Server Error' });
+    }
+}); ****/
+router.get('/checks/edit/admin/:num', ensureAdmin, ensureCheckNotIssued, async (req, res) => {
+    try {
+        const checkNum = req.params.num;
+
+        // Fetch check details by check number
+        const checkQuery = 'SELECT * FROM cheque WHERE num = $1';
+        const checkResult = await pool.query(checkQuery, [checkNum]);
+
+        if (checkResult.rows.length === 0) {
+            return res.status(404).render('404', { message: 'Check not found' });
+        }
+
+        const check = checkResult.rows[0];
+
+        // Fetch all banks
+        const banksQuery = 'SELECT * FROM bank';
+        const banksResult = await pool.query(banksQuery);
+        const banks = banksResult.rows;
+
+        // Fetch accounts for the selected bank
+        const accountsQuery = 'SELECT * FROM account WHERE bankCode = $1';
+        const accountsResult = await pool.query(accountsQuery, [check.bankCode]);
+        const accounts = accountsResult.rows;
+
+        // Render the edit-check-admin page with pre-selected bank and account
+        res.render('edit-check-admin', {
+            check,
+            banks,
+            accounts,
+            req,
+            user: req.user
+        });
+    } catch (error) {
+        console.error('Error fetching check details:', error);
+        res.status(500).render('500', { message: 'Internal Server Error' });
+    }
+});
 router.post('/checks/update/admin/:num', ensureAdmin, async (req, res) => {
     const checkNum = req.params.num;
     const { amount, beneficiary, valueDate, bankCode, accountNum, entryDate, issueDate, type } = req.body;
     const updatedBy = req.user ? req.user.fullname : undefined;
+
+    // Validation for amount
+    if (!amount || amount <= 0) {
+        const banks = await getBanks();
+        const accounts = await getAccountsByBank(bankCode);
+        return res.render('edit-check-admin', {
+            check: {
+                num: checkNum,
+                amount,
+                beneficiary,
+                valueDate,
+                bankCode,
+                accountNum,
+                entryDate,
+                issueDate,
+                type
+            },
+            banks,
+            accounts,
+            req,
+            user: req.user,
+            errorMessage: 'Amount must be greater than 0'
+        });
+    }
 
     try {
         // Update the check details in the database
@@ -773,6 +904,7 @@ router.post('/checks/update/admin/:num', ensureAdmin, async (req, res) => {
         res.status(500).render('404', { message: 'Internal Server Error' });
     }
 });
+
 
 
 router.get('/checks/edit/agent/:num', ensureAgent, async (req, res) => {
@@ -874,7 +1006,7 @@ router.get('/checks/edit/agent/:num', ensureAgent, async (req, res) => {
         res.status(500).send('Server Error');
     }
 }); */
-router.post('/checks/update/agent/:num', ensureAgent, async (req, res) => {
+/* router.post('/checks/update/agent/:num', ensureAgent, async (req, res) => {
     const checkNum = parseInt(req.params.num, 10);
 
     // Log the incoming form data to debug
@@ -922,7 +1054,68 @@ router.post('/checks/update/agent/:num', ensureAgent, async (req, res) => {
         console.error(err);
         res.status(500).send('Server Error');
     }
+}); */
+router.post('/checks/update/agent/:num', ensureAgent, async (req, res) => {
+    const checkNum = parseInt(req.params.num, 10);
+
+
+
+    const { amount, beneficiary, valueDate, bankCode, accountNum, updatedBy } = req.body;
+
+    // Check if the amount is empty or zero
+    if (!amount || parseFloat(amount) <= 0) {
+        return res.render('edit-check-agent', {
+            check: req.body,
+            banks: await getBanks(), // Ensure to fetch the list of banks
+            accounts: await getAccountsByBank(bankCode), // Ensure to fetch the list of accounts based on the bankCode
+            errorMessage: 'Amount is required and must be greater than zero.',
+            req,
+            user: req.user
+        });
+    }
+
+    try {
+        // Verify that the bankCode is being correctly retrieved from the form
+        console.log('Bank Code:', bankCode);
+        console.log('Account Number:', accountNum);
+        console.log('Updated By:', updatedBy);
+
+        const updateQuery = `
+            UPDATE cheque
+            SET amount = $1,
+                beneficiary = $2,
+                valueDate = $3,
+                bankCode = $4,
+                accountNum = $5,
+                updatedBy = $6
+            WHERE num = $7
+            RETURNING *;
+        `;
+
+        const updateValues = [
+            amount, 
+            beneficiary, 
+            valueDate || null, 
+            bankCode, 
+            accountNum || null, 
+            updatedBy, // The ID of the user making the update
+            checkNum
+        ];
+
+        const result = await pool.query(updateQuery, updateValues);
+
+        if (result.rowCount === 0) {
+            return res.status(404).send('Check not found or no changes made');
+        }
+
+        // Redirect back to the emission page after a successful update
+        res.redirect('/emission');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
 });
+
 
  /*router.post('/checks/update/cashier/:num',ensureCashier,ensureCheckNotIssued, async (req, res) => {
       const checkNum = parseInt(req.params.num, 10);

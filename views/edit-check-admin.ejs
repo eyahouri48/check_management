@@ -21,6 +21,14 @@
             <div class="row">
                 <div class="col-lg-8">
                     <h1 class="page-header">Modify Check</h1>
+
+                    <!-- Display error message if it exists -->
+                    <% if (typeof errorMessage !== 'undefined') { %>
+                        <div class="alert alert-danger">
+                            <%= errorMessage %>
+                        </div>
+                    <% } %>
+
                     <form action="/checks/update/admin/<%= check.num %>" method="POST">
                         <div class="form-group">
                             <label for="amount">Amount</label>
@@ -28,7 +36,7 @@
                         </div>
                         <div class="form-group">
                             <label for="beneficiary">Beneficiary</label>
-                            <input type="text" class="form-control" id="beneficiary" name="beneficiary" value="<%= check.beneficiary %>" >
+                            <input type="text" class="form-control" id="beneficiary" name="beneficiary" value="<%= check.beneficiary %>" required>
                         </div>
                         <div class="form-group">
                             <label for="valueDate">Value Date</label>
@@ -85,6 +93,7 @@
     <!-- /.content-wrapper -->
 </div>
 <!-- /#wrapper -->
+
 <!-- Logout Modal-->
 <%- include("./partials/logoutModel.ejs"); %>
 
@@ -92,7 +101,6 @@
 <script>
     async function updateAccounts(bankCode) {
         const accountSelect = document.getElementById('accountNum');
-        const selectedAccount = accountSelect.value; // Save the currently selected account
 
         if (bankCode) {
             try {
@@ -111,7 +119,8 @@
                     accountSelect.appendChild(option);
                 });
 
-                // Re-select the previously selected account
+                // Set the previously selected account value
+                const selectedAccount = "<%= check.accountnum %>";
                 if (selectedAccount) {
                     accountSelect.value = selectedAccount;
                 }
@@ -124,21 +133,22 @@
         }
     }
 
-    // Pre-select account numbers if bank is already selected
+    // Pre-select bank and accounts on page load
     document.addEventListener('DOMContentLoaded', () => {
-        const bankCode = document.getElementById('bankCode').value;
-        const accountNum = "<%= check.accountnum %>"; // Keep the selected account number in a variable
-
+        const bankCode = "<%= check.bankcode %>";
         if (bankCode) {
             updateAccounts(bankCode).then(() => {
-                // After updating accounts, select the pre-set account
-                document.getElementById('accountNum').value = accountNum;
+                // Select the correct bank and account on load
+                document.getElementById('bankCode').value = bankCode;
+                const accountNum = "<%= check.accountnum %>";
+                if (accountNum) {
+                    document.getElementById('accountNum').value = accountNum;
+                }
             });
-        } else {
-            document.getElementById('accountNum').value = accountNum;
         }
     });
 </script>
+
 
 
 
