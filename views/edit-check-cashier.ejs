@@ -27,17 +27,17 @@
             <form action="/checks/update/cashier/<%= check.num %>" method="POST">
               <div class="form-group">
                 <label for="entryDate">Entry Date:</label>
-                <input type="date" class="form-control" id="entryDate" name="entryDate" value="<%= check.entrydate ? new Date(check.entrydate).toISOString().split('T')[0] : '' %> " >
+                <input type="date" class="form-control" id="entryDate" name="entryDate" value="<%= check.entrydate ? new Date(check.entrydate).toISOString().split('T')[0] : '' %>" >
               </div>
               <div class="form-group">
                 <label for="issueDate">Issue Date:</label>
-                <input type="date" class="form-control" id="issueDate" name="issueDate" value="<%= check.issueDate ? new Date(check.issueDate).toISOString().split('T')[0] : '' %> " >
+                <input type="date" class="form-control" id="issueDate" name="issueDate" value="<%= check.issuedate ? new Date(check.issuedate).toISOString().split('T')[0] : '' %> " >
               </div>
               <div class="form-group">
                 <label for="type">Type:</label>
                 <select class="form-control" id="type" name="type"  >
                   <option value="" >Select Type</option>
-                  <option value="F" <%= check.type === 'F' ? 'selected' : '' %>>Supplier</option>
+                  <option value="S" <%= check.type === 'S' ? 'selected' : '' %>>Supplier</option>
                   <option value="P" <%= check.type === 'P' ? 'selected' : '' %>>Personnel</option>
                   <option value="I" <%= check.type === 'I' ? 'selected' : '' %>>Intern</option>
                 </select>

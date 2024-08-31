@@ -1,42 +1,27 @@
-// app.js
-
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import bodyParser from 'body-parser';
 import session from 'express-session';
 import expressLayouts from 'express-ejs-layouts';
-import dotenv from 'dotenv';
-import pkg from 'pg';
+import pool from './db_con.js'; // Import the database connection
 import bcrypt from 'bcryptjs';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import flash from 'connect-flash';
 import mainRoutes from './routes/mainRoutes.js'; // Import the function
 
-dotenv.config();
-const { Pool } = pkg;
-const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_DATABASE,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
-});
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Middleware setup
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(expressLayouts);// to not repeat ourselves and to wrap all the pages by the html of main.ejs layout
- 
-
-app.set('layout','./layout/main');
-
+app.use(expressLayouts);
+app.set('layout', './layout/main');
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -48,6 +33,7 @@ app.use(session({
 }));
 
 app.use(flash());
+
 // Passport initialization
 app.use(passport.initialize());
 app.use(passport.session());
@@ -97,12 +83,10 @@ passport.deserializeUser(async (iduser, done) => {
     }
 });
 
-
-
 // Use the routes, passing passport as an argument
-app.use('/', mainRoutes(passport)); // Pass passport to mainRoutes
+app.use('/', mainRoutes(passport));
 
-
+// Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

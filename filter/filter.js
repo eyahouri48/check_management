@@ -1,15 +1,5 @@
 // filter/filter.js
-import pkg from 'pg';
-const { Pool } = pkg;
-
-// Configure the PostgreSQL connection pool
-const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'check',
-  password: '48?Oracle',
-  port: 5432, // Default PostgreSQL port
-});
+import pool from '../db_con.js' ;
 
 /**
  * Retrieves filtered checks from the database based on the provided filters.

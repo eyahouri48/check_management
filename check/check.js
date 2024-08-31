@@ -1,13 +1,4 @@
-import pkg from 'pg';
-const { Pool } = pkg;
-
-const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'check',
-    password: '48?Oracle',
-    port: 5432,
-});
+import pool from '../db_con.js' ;
 const ensureCheckNotIssued = async (req, res, next) => {
     const checkNum = parseInt(req.params.num, 10);
     console.log(`Middleware called for check number: ${checkNum}`);
