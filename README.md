@@ -43,6 +43,8 @@ In the root directory of the project, create a .env file with the following cont
    - `DB_PASSWORD='yourDatabasePassword'`
    - `DB_PORT=5432`
    - `SESSION_SECRET='yourSessionSecret'`
+
+
 Replace DB_USER, DB_DATABASE, and DB_PASSWORD with your PostgreSQL credentials and database name. Replace SESSION_SECRET with a secret key for session management.
 
 6.**Set Up the Database:**
